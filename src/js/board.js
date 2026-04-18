@@ -212,10 +212,10 @@ const Board = (() => {
 
   function afterAction(result) {
     render();
+    updateStatus();
     if (result.newFormations && result.newFormations.length > 0) {
       startClaimTimer();
     } else {
-      updateStatus();
       scheduleAI();
     }
   }

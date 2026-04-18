@@ -1,24 +1,54 @@
 // Formation detection for 5x5 Strategy Game
-// All diagonal formations require both endpoints on board edge (index 0 or 4)
+// All diagonal formations require both endpoints on board edge (row or col is 0 or 4)
 
 const Formation = (() => {
   const SIZE = 5;
-  const EDGE = [0, 4];
-  const isEdge = v => v === 0 || v === 4;
+  const isEdge = v => v === 0 || v === SIZE - 1;
 
-  // Check if a cell matches color and is alive
-  const match = (board, r, c, color) =>
-    r >= 0 && r < SIZE && c >= 0 && c < SIZE &&
-    board[r][c] === color;
+  // Pre-compute all valid diagonal lines (length 3-5) with both endpoints on edge
+  const DIAG_LINES = (() => {
+    const lines = [];
+    const dirs = [[1,1],[1,-1]];
+    for (const [dr, dc] of dirs) {
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          // Walk from (r,c) in direction (dr,dc), collect all cells
+          const all = [];
+          let nr = r, nc = c;
+          while (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+            all.push([nr, nc]);
+            nr += dr; nc += dc;
+          }
+          // Extract all sub-lines of length 3, 4, 5 where both endpoints are on edge
+          for (let len = 3; len <= Math.min(5, all.length); len++) {
+            for (let start = 0; start <= all.length - len; start++) {
+              const sub = all.slice(start, start + len);
+              const [sr, sc] = sub[0];
+              const [er, ec] = sub[sub.length - 1];
+              if ((isEdge(sr) || isEdge(sc)) && (isEdge(er) || isEdge(ec))) {
+                lines.push(sub);
+              }
+            }
+          }
+        }
+      }
+    }
+    // Deduplicate by sorting cells and creating key
+    const seen = new Set();
+    return lines.filter(line => {
+      const key = line.map(c => c.join(',')).sort().join(';');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
 
-  // Collect all formations for a given color on the board
-  // board[r][c] = 'B' | 'W' | null | 'DB' | 'DW'
-  // alive color = 'B' or 'W', dead = 'DB' or 'DW'
   function findAll(board, color) {
     const results = [];
-    // 1. 大棍 (5 in a row/column)
+
+    // 1. 大棍 (5 in a row/column spanning full board)
     for (let r = 0; r < SIZE; r++) {
-      if (board[r].every(c => c === color))
+      if (board[r].every(cell => cell === color))
         results.push({ type: 'line5', cells: Array.from({length: 5}, (_, c) => [r, c]) });
     }
     for (let c = 0; c < SIZE; c++) {
@@ -26,30 +56,11 @@ const Formation = (() => {
         results.push({ type: 'line5', cells: Array.from({length: 5}, (_, r) => [r, c]) });
     }
 
-    // 2. Diagonal formations (3, 4, 5) - both endpoints must be on edge
-    const dirs = [[1, 1], [1, -1]]; // two diagonal directions
-    for (const [dr, dc] of dirs) {
-      for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
-          // Collect consecutive same-color cells in this direction
-          const cells = [];
-          let nr = r, nc = c;
-          while (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc] === color) {
-            cells.push([nr, nc]);
-            nr += dr; nc += dc;
-          }
-          if (cells.length >= 3) {
-            const [sr, sc] = cells[0];
-            const [er, ec] = cells[cells.length - 1];
-            // Both endpoints must be on board edge
-            if ((isEdge(sr) || isEdge(sc)) && (isEdge(er) || isEdge(ec))) {
-              if (cells.length === 5) results.push({ type: 'diag5', cells: [...cells] });
-              else if (cells.length === 4) results.push({ type: 'diag4', cells: [...cells] });
-              else if (cells.length === 3) results.push({ type: 'diag3', cells: [...cells] });
-              // For length > 3, also report sub-formations? No - longest wins.
-            }
-          }
-        }
+    // 2. Diagonal formations from pre-computed lines
+    for (const line of DIAG_LINES) {
+      if (line.every(([r, c]) => board[r][c] === color)) {
+        const type = line.length === 5 ? 'diag5' : line.length === 4 ? 'diag4' : 'diag3';
+        results.push({ type, cells: [...line] });
       }
     }
 
@@ -63,44 +74,23 @@ const Formation = (() => {
       }
     }
 
-    return dedup(results);
+    return results;
   }
 
-  // Deduplicate formations with same cells
-  function dedup(formations) {
-    const seen = new Set();
-    return formations.filter(f => {
-      const key = f.type + ':' + f.cells.map(c => c.join(',')).sort().join(';');
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  function formationKey(f) {
+    return f.type + ':' + f.cells.map(c => c.join(',')).sort().join(';');
   }
 
-  // Find NEW formations created by placing/moving to (row, col)
   function findNew(board, color, prevFormations) {
     const all = findAll(board, color);
-    const prevKeys = new Set(prevFormations.map(f =>
-      f.type + ':' + f.cells.map(c => c.join(',')).sort().join(';')
-    ));
-    return all.filter(f => {
-      const key = f.type + ':' + f.cells.map(c => c.join(',')).sort().join(';');
-      return !prevKeys.has(key);
-    });
+    const prevKeys = new Set(prevFormations.map(formationKey));
+    return all.filter(f => !prevKeys.has(formationKey(f)));
   }
 
-  // Count pinches earned by formations
   function pinchCount(formations) {
-    let count = 0;
-    for (const f of formations) {
-      if (f.type === 'diag3' || f.type === 'square') count += 1;
-      else if (f.type === 'diag4') count += 1;
-      else if (f.type === 'diag5' || f.type === 'line5') count += 1;
-    }
-    return count;
+    return formations.length; // each formation grants 1 pinch
   }
 
-  // Get all legal pinch targets (opponent alive pieces not in any of their formations)
   function pinchTargets(board, opponentColor) {
     const targets = [];
     for (let r = 0; r < SIZE; r++)
@@ -109,7 +99,7 @@ const Formation = (() => {
     return targets;
   }
 
-  return { findAll, findNew, pinchCount, pinchTargets, SIZE };
+  return { findAll, findNew, pinchCount, pinchTargets, DIAG_LINES, SIZE };
 })();
 
 if (typeof module !== 'undefined') module.exports = Formation;
