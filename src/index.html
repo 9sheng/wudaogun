@@ -37,10 +37,10 @@
 
     <canvas id="board"></canvas>
 
-    <div id="btn-claim">
+    <button id="btn-claim" onclick="Board.pauseTimer()">
       <div id="timer-fill"></div>
       <span class="claim-text">🎯 请掐子！</span>
-    </div>
+    </button>
 
     <div class="controls">
       <button onclick="Board.undoMove()">↩ 悔棋</button>

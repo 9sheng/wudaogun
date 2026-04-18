@@ -288,6 +288,7 @@ const Board = (() => {
   function startPinchTimer() {
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
     claimTimeLeft = 10000;
+    timerPaused = false;
     updateStatus();
     updateTimerBar();
     const tick = 50;
@@ -306,12 +307,20 @@ const Board = (() => {
   function clearTimer() {
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
     claimTimeLeft = 0;
+    timerPaused = false;
     updateTimerBar();
   }
 
-  function claimPinch() {
-    // No longer used - pinch selection is direct
+  let timerPaused = false;
+
+  function pauseTimer() {
+    if (game.state !== Game.STATE_WAIT_PINCH_SELECT || timerPaused) return;
+    if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
+    timerPaused = true;
+    updateStatus();
   }
+
+  function claimPinch() {} // kept for compatibility
 
   // ===================== AI =====================
   function scheduleAI() {
@@ -397,7 +406,10 @@ const Board = (() => {
       btn.style.display = show ? 'flex' : 'none';
       btn.classList.toggle('active', show);
       const txt = btn.querySelector('.claim-text');
-      if (txt) txt.textContent = `🎯 请掐子！选择对方棋子 (${game.pinchesRemaining})`;
+      if (txt) {
+        if (timerPaused) txt.textContent = `⏸ 已暂停，请选择要掐的棋子 (${game.pinchesRemaining})`;
+        else txt.textContent = `🎯 请掐子！点此暂停倒计时 (${game.pinchesRemaining})`;
+      }
     }
 
     // Piece counts
@@ -429,5 +441,5 @@ const Board = (() => {
     }
   }
 
-  return { init, newGame, setAI, setHints, claimPinch, undoMove, render };
+  return { init, newGame, setAI, setHints, claimPinch, pauseTimer, undoMove, render };
 })();
