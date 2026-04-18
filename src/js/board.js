@@ -246,7 +246,7 @@ const Board = (() => {
   // ===================== Click handling =====================
   function onClick(e) {
     if (game.phase === Game.PHASE_OVER) return;
-    if (aiEngine && game.turn === aiColor && game.state !== Game.STATE_WAIT_PINCH_SELECT) return;
+    if (aiEngine && game.turn === aiColor) return;
 
     const rect = canvas.getBoundingClientRect();
     const scale = canvas.width / rect.width;
@@ -370,8 +370,11 @@ const Board = (() => {
       const result = Game.pinch(game, t[0], t[1]);
       render(); updateStatus();
       if (result && result.gameOver) return showWinner();
-      if (result && result.more) setTimeout(doAIPinch, 300);
+      if (result && result.more) { setTimeout(doAIPinch, 400); return; }
     }
+    // Pinch done or no target — if turn switched to human, nothing to do
+    // If still AI turn (shouldn't happen), schedule next
+    scheduleAI();
   }
 
   // ===================== UI updates =====================
