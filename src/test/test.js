@@ -486,6 +486,177 @@ describe('AI: Factory', () => {
 });
 
 // ============================================================
+// Regression Tests (user-reported bugs)
+// ============================================================
+describe('Regression: pinch switches turn', () => {
+  it('should switch turn after pinch completes', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B'; g.board[0][0] = 'W';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 3;
+    Game.place(g, 2, 4); // B forms diag3
+    eq(g.turn, 'B'); // still B's turn during pinch select
+    Game.pinch(g, 0, 0);
+    eq(g.turn, 'W'); // must switch to W after pinch
+    eq(g.state, Game.STATE_WAIT_ACTION);
+  });
+
+  it('should switch turn after expire (no pinch taken)', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 2;
+    Game.place(g, 2, 4);
+    eq(g.turn, 'B');
+    Game.expireClaim(g);
+    eq(g.turn, 'W');
+  });
+});
+
+describe('Regression: pinch targets prioritize non-formation pieces', () => {
+  it('should only return non-formation pieces when available', () => {
+    const b = emptyBoard();
+    // W has a diag3 at (0,2)-(1,3)-(2,4) and a free piece at (3,0)
+    b[0][2] = 'W'; b[1][3] = 'W'; b[2][4] = 'W'; b[3][0] = 'W';
+    const targets = Formation.pinchTargets(b, 'W');
+    eq(targets.length, 1);
+    eq(targets[0][0], 3); eq(targets[0][1], 0);
+  });
+
+  it('should allow formation pieces when all are in formations', () => {
+    const b = emptyBoard();
+    b[0][2] = 'W'; b[1][3] = 'W'; b[2][4] = 'W'; // all in diag3
+    const targets = Formation.pinchTargets(b, 'W');
+    eq(targets.length, 3); // all 3 are valid since no free pieces
+  });
+
+  it('should reject pinch on formation piece when free pieces exist', () => {
+    const g = Game.create();
+    // B will form diag3 at (0,2)-(1,3)-(2,4)
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    // W has formation at (2,0)-(3,1)-(4,2) and free piece at (4,4)
+    g.board[2][0] = 'W'; g.board[3][1] = 'W'; g.board[4][2] = 'W';
+    g.board[4][4] = 'W'; // free W piece
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.formations.W = Formation.findAll(g.board, 'W');
+    g.placedCount = 7;
+    Game.place(g, 2, 4); // B forms diag3
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+    // Try to pinch W's formation piece
+    const bad = Game.pinch(g, 2, 0);
+    eq(bad, false); // rejected - W has free piece at (4,4)
+    // Pinch the free piece
+    const good = Game.pinch(g, 4, 4);
+    assert(good, 'Should allow pinching free piece');
+  });
+});
+
+describe('Regression: direct pinch select (no claim step)', () => {
+  it('should go directly to pinch select on formation', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 2;
+    Game.place(g, 2, 4);
+    // Should be in pinch select directly, NOT waitClaim
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+  });
+
+  it('move phase should also go directly to pinch select', () => {
+    const g = Game.create();
+    g.phase = Game.PHASE_MOVE;
+    g.board[0][2] = 'B'; g.board[1][3] = 'B'; g.board[2][3] = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    // Move (2,3) to (2,4) to complete diag3
+    const result = Game.move(g, 2, 3, 2, 4);
+    assert(result, 'Move should succeed');
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+  });
+
+  it('expireClaim should work on pinch select state', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 2;
+    Game.place(g, 2, 4);
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+    Game.expireClaim(g);
+    eq(g.state, Game.STATE_WAIT_ACTION);
+    eq(g.turn, 'W');
+  });
+});
+
+describe('Regression: AI pinch after formation', () => {
+  it('AI should be able to pinch after forming', () => {
+    const g = Game.create();
+    g.board[0][2] = 'W'; g.board[1][3] = 'W';
+    g.board[0][0] = 'B'; g.board[1][0] = 'B';
+    g.turn = 'W'; g.placedCount = 4;
+    g.formations.W = Formation.findAll(g.board, 'W');
+    const result = Game.place(g, 2, 4); // W forms diag3
+    assert(result.newFormations.length > 0, 'Should detect formation');
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+    eq(g.turn, 'W'); // still W's turn for pinch
+
+    const ai = AI.get('greedy');
+    const t = ai.choosePinch(g);
+    assert(t, 'AI should choose a pinch target');
+    const pr = Game.pinch(g, t[0], t[1]);
+    assert(pr, 'Pinch should succeed');
+    eq(g.turn, 'B'); // turn switches to human after pinch
+  });
+});
+
+describe('Regression: win at phase transition (all pieces dead)', () => {
+  it('should declare winner when all opponent pieces die in phase 1', () => {
+    const g = Game.create();
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++) {
+        if (r === 4 && c === 4) continue;
+        g.board[r][c] = (r + c) % 2 === 0 ? 'B' : 'W';
+        g.placedCount++;
+      }
+    // Mark ALL white pieces as dead
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++)
+        if (g.board[r][c] === 'W') {
+          g.board[r][c] = 'DW';
+          g.deadPieces.push({r, c, color: 'W'});
+        }
+    g.turn = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.state = Game.STATE_WAIT_ACTION;
+    Game.place(g, 4, 4);
+    // If formation detected, expire it to trigger phase transition
+    if (g.state === Game.STATE_WAIT_PINCH_SELECT) Game.expireClaim(g);
+    // After transition, all DW removed → W has 0 pieces → B wins
+    eq(g.phase, Game.PHASE_OVER);
+    eq(g.winner, 'B');
+  });
+
+  it('should continue game when both sides have pieces after transition', () => {
+    const g = Game.create();
+    for (let r = 0; r < 5; r++)
+      for (let c = 0; c < 5; c++) {
+        if (r === 4 && c === 4) continue;
+        g.board[r][c] = (r + c) % 2 === 0 ? 'B' : 'W';
+        g.placedCount++;
+      }
+    // Mark only one W dead
+    g.board[0][1] = 'DW';
+    g.deadPieces.push({r: 0, c: 1, color: 'W'});
+    g.turn = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.state = Game.STATE_WAIT_ACTION;
+    Game.place(g, 4, 4);
+    // Handle any formation
+    if (g.state === Game.STATE_WAIT_PINCH_SELECT) Game.expireClaim(g);
+    eq(g.phase, Game.PHASE_MOVE); // game continues
+    assert(!g.winner, 'No winner yet');
+  });
+});
+
+// ============================================================
 // Summary
 // ============================================================
 console.log(`\n${'='.repeat(40)}`);
