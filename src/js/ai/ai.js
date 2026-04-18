@@ -5,22 +5,21 @@ const AI = (() => {
     greedy: AIGreedy,
     minimax: AIMinimax,
     mcts: AIMCTS,
+    negamax: AINegamax,
   };
 
-  function get(level) {
-    return engines[level] || engines.random;
-  }
+  function get(level) { return engines[level] || engines.random; }
 
   function list() {
     return [
-      { id: 'random',  name: '随机 (Random)',  desc: 'Beginner - random moves' },
-      { id: 'greedy',  name: '贪心 (Greedy)',   desc: 'Intermediate - heuristic evaluation' },
-      { id: 'minimax', name: '极小极大 (Minimax)', desc: 'Advanced - alpha-beta pruning' },
-      { id: 'mcts',    name: '蒙特卡洛 (MCTS)',  desc: 'Expert - Monte Carlo tree search' },
+      { id: 'random',  name: '随机 (Random)',  desc: 'Beginner' },
+      { id: 'greedy',  name: '贪心 (Greedy)',   desc: 'Intermediate' },
+      { id: 'minimax', name: '极小极大 (Minimax)', desc: 'Advanced' },
+      { id: 'mcts',    name: '蒙特卡洛 (MCTS)',  desc: 'Expert' },
+      { id: 'negamax', name: '深度搜索 (Negamax)', desc: 'Master' },
     ];
   }
 
-  // AI always claims pinch (it knows if it has formations)
   function shouldClaimPinch(g) {
     return g.newFormations && g.newFormations.length > 0;
   }

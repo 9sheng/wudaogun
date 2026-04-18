@@ -1,63 +1,52 @@
-// Level 3: Minimax with Alpha-Beta Pruning
+// Level 3: Minimax with Alpha-Beta Pruning + move ordering
 const AIMinimax = (() => {
   const opp = c => c === 'B' ? 'W' : 'B';
-  const MAX_DEPTH_PLACE = 3;
-  const MAX_DEPTH_MOVE = 4;
+  const MAX_DEPTH_PLACE = 4;
+  const MAX_DEPTH_MOVE = 5;
 
   function evaluate(g, color) {
-    const o = opp(color);
-    let score = 0;
-    score += (Game.pieceCount(g, color) - Game.pieceCount(g, o)) * 20;
-    const myF = Formation.findAll(g.board, color);
-    const opF = Formation.findAll(g.board, o);
-    for (const f of myF) {
-      if (f.type === 'diag5' || f.type === 'line5') score += 50;
-      else if (f.type === 'diag4') score += 30;
-      else if (f.type === 'diag3' || f.type === 'square') score += 20;
-    }
-    for (const f of opF) {
-      if (f.type === 'diag5' || f.type === 'line5') score -= 50;
-      else if (f.type === 'diag4') score -= 30;
-      else if (f.type === 'diag3' || f.type === 'square') score -= 20;
-    }
-    // Mobility in move phase
-    if (g.phase === Game.PHASE_MOVE) {
-      score += Game.getLegalMoves(g, color).length * 2;
-      score -= Game.getLegalMoves(g, o).length * 2;
-    }
-    return score;
+    return AIEval.evaluate(g.board, color, g.phase);
   }
 
-  function applyMove(sim, m, color) {
-    if (m.r !== undefined) {
-      sim.board[m.r][m.c] = color;
-    } else {
-      sim.board[m.fr][m.fc] = null;
-      sim.board[m.tr][m.tc] = color;
-    }
+  function applyMove(board, m, color) {
+    if (m.r !== undefined) { board[m.r][m.c] = color; }
+    else { board[m.fr][m.fc] = null; board[m.tr][m.tc] = color; }
+  }
+  function undoMove(board, m, color) {
+    if (m.r !== undefined) { board[m.r][m.c] = null; }
+    else { board[m.fr][m.fc] = color; board[m.tr][m.tc] = null; }
   }
 
-  function undoMove(sim, m, color) {
-    if (m.r !== undefined) {
-      sim.board[m.r][m.c] = null;
-    } else {
-      sim.board[m.fr][m.fc] = color;
-      sim.board[m.tr][m.tc] = null;
-    }
+  // Quick heuristic for move ordering (higher = search first)
+  function moveScore(board, m, color, phase) {
+    applyMove(board, m, color);
+    const s = AIEval.evaluate(board, color, phase);
+    undoMove(board, m, color);
+    return s;
   }
 
-  function minimax(g, depth, alpha, beta, maximizing, rootColor) {
-    if (depth === 0) return evaluate(g, rootColor);
+  function orderMoves(moves, board, color, phase) {
+    return moves.map(m => ({ m, s: moveScore(board, m, color, phase) }))
+      .sort((a, b) => b.s - a.s)
+      .map(x => x.m);
+  }
+
+  function minimax(board, depth, alpha, beta, maximizing, rootColor, phase) {
+    if (depth === 0) return AIEval.evaluate(board, rootColor, phase);
     const color = maximizing ? rootColor : opp(rootColor);
-    const moves = Game.getLegalMoves(g, color);
-    if (moves.length === 0) return evaluate(g, rootColor);
+    const g = { board, phase, turn: color };
+    let moves = Game.getLegalMoves(g, color);
+    if (moves.length === 0) return AIEval.evaluate(board, rootColor, phase);
+
+    // Order moves at higher depths for better pruning
+    if (depth >= 2) moves = orderMoves(moves, board, color, phase);
 
     if (maximizing) {
       let val = -Infinity;
       for (const m of moves) {
-        applyMove(g, m, color);
-        val = Math.max(val, minimax(g, depth - 1, alpha, beta, false, rootColor));
-        undoMove(g, m, color);
+        applyMove(board, m, color);
+        val = Math.max(val, minimax(board, depth - 1, alpha, beta, false, rootColor, phase));
+        undoMove(board, m, color);
         alpha = Math.max(alpha, val);
         if (beta <= alpha) break;
       }
@@ -65,9 +54,9 @@ const AIMinimax = (() => {
     } else {
       let val = Infinity;
       for (const m of moves) {
-        applyMove(g, m, color);
-        val = Math.min(val, minimax(g, depth - 1, alpha, beta, true, rootColor));
-        undoMove(g, m, color);
+        applyMove(board, m, color);
+        val = Math.min(val, minimax(board, depth - 1, alpha, beta, true, rootColor, phase));
+        undoMove(board, m, color);
         beta = Math.min(beta, val);
         if (beta <= alpha) break;
       }
@@ -76,14 +65,15 @@ const AIMinimax = (() => {
   }
 
   function bestMove(g) {
-    const moves = Game.getLegalMoves(g, g.turn);
+    let moves = Game.getLegalMoves(g, g.turn);
     const depth = g.phase === Game.PHASE_PLACE ? MAX_DEPTH_PLACE : MAX_DEPTH_MOVE;
+    const board = g.board.map(r => [...r]);
+    moves = orderMoves(moves, board, g.turn, g.phase);
     let best = moves[0], bestScore = -Infinity;
-    const sim = Game.clone(g);
     for (const m of moves) {
-      applyMove(sim, m, g.turn);
-      const s = minimax(sim, depth - 1, -Infinity, Infinity, false, g.turn);
-      undoMove(sim, m, g.turn);
+      applyMove(board, m, g.turn);
+      const s = minimax(board, depth - 1, -Infinity, Infinity, false, g.turn, g.phase);
+      undoMove(board, m, g.turn);
       if (s > bestScore) { bestScore = s; best = m; }
     }
     return best;
@@ -98,7 +88,7 @@ const AIMinimax = (() => {
     for (const [r, c] of targets) {
       const sim = Game.clone(g);
       sim.board[r][c] = g.phase === Game.PHASE_PLACE ? 'D' + opp(g.turn) : null;
-      const s = evaluate(sim, g.turn);
+      const s = AIEval.evaluate(sim.board, g.turn, g.phase);
       if (s > bestScore) { bestScore = s; best = [r, c]; }
     }
     return best;
@@ -113,7 +103,7 @@ const AIMinimax = (() => {
     for (const [r, c] of own) {
       const sim = Game.clone(g);
       sim.board[r][c] = null;
-      const s = evaluate(sim, g.turn);
+      const s = AIEval.evaluate(sim.board, g.turn, g.phase);
       if (s > bestScore) { bestScore = s; best = [r, c]; }
     }
     return best;

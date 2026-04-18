@@ -52,6 +52,7 @@
         <option value="greedy" selected>🤖 AI: 贪心</option>
         <option value="minimax">🤖 AI: 极小极大</option>
         <option value="mcts">🤖 AI: 蒙特卡洛</option>
+        <option value="negamax">🤖 AI: 深度搜索</option>
       </select>
       <select id="first-select" onchange="Board.setFirst(this.value)">
         <option value="B">⚫ 黑先</option>
@@ -74,10 +75,12 @@
 
   <script src="js/formation.js"></script>
   <script src="js/game.js"></script>
+  <script src="js/ai/eval.js"></script>
   <script src="js/ai/random.js"></script>
   <script src="js/ai/greedy.js"></script>
   <script src="js/ai/minimax.js"></script>
   <script src="js/ai/mcts.js"></script>
+  <script src="js/ai/negamax.js"></script>
   <script src="js/ai/ai.js"></script>
   <script src="js/board.js"></script>
   <script>Board.init(document.getElementById('board'));</script>
