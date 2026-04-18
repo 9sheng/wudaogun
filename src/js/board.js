@@ -276,12 +276,14 @@ const Board = (() => {
 
   function onTouch(e) {
     e.preventDefault();
+    Sound.unlock();
     const t = e.changedTouches[0];
     onClick({ clientX: t.clientX, clientY: t.clientY });
   }
 
   // ===================== Click handling =====================
   function onClick(e) {
+    Sound.unlock();
     if (game.phase === Game.PHASE_OVER) return;
     if (aiEngine && game.turn === aiColor) return;
 

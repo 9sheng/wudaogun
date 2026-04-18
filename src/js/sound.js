@@ -3,8 +3,12 @@ const Sound = (() => {
   let ctx;
   function getCtx() {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
+
+  // Must be called from a user gesture to unlock audio on mobile
+  function unlock() { getCtx(); }
 
   function play(freq, type, duration, vol = 0.3) {
     try {
@@ -42,5 +46,5 @@ const Sound = (() => {
 
   function tick() { play(1000, 'sine', 0.03, 0.1); }
 
-  return { place, pinch, formation, win, sacrifice, tick };
+  return { place, pinch, formation, win, sacrifice, tick, unlock };
 })();
