@@ -434,12 +434,7 @@ const Board = (() => {
   function updateTimerBar() {
     const fill = document.getElementById('timer-fill');
     if (!fill) return;
-    const pct = Math.max(0, claimTimeLeft / 5000 * 100);
-    fill.style.width = pct + '%';
-    // Color transition: green → yellow → red
-    if (pct > 60) fill.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
-    else if (pct > 30) fill.style.background = 'linear-gradient(135deg, #e67e22, #f39c12)';
-    else fill.style.background = 'linear-gradient(135deg, #c0392b, #e74c3c)';
+    fill.style.width = Math.max(0, claimTimeLeft / 5000 * 100) + '%';
   }
 
   function showWinner() { render(); updateStatus(); }
