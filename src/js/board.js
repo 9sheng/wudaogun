@@ -338,6 +338,8 @@ const Board = (() => {
 
     if (result.newFormations && result.newFormations.length > 0) {
       startPinchTimer();
+    } else if (game.state === Game.STATE_WAIT_SACRIFICE) {
+      showSacrificeOverlay();
     } else {
       scheduleAI();
     }
@@ -508,16 +510,24 @@ const Board = (() => {
   const cursorCache = {};
   function makeCursor(color) {
     if (cursorCache[color]) return cursorCache[color];
-    const s = 28, r = s / 2;
+    const s = 36, r = s / 2;
     const c = document.createElement('canvas');
     c.width = c.height = s;
     const x = c.getContext('2d');
+    // Outer glow ring
     x.beginPath(); x.arc(r, r, r - 2, 0, Math.PI * 2);
-    const g = x.createRadialGradient(r - 3, r - 3, 1, r, r, r - 2);
+    x.strokeStyle = color === 'B' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+    x.lineWidth = 3; x.stroke();
+    // Piece body
+    x.beginPath(); x.arc(r, r, r - 5, 0, Math.PI * 2);
+    const g = x.createRadialGradient(r - 4, r - 4, 1, r, r, r - 5);
     if (color === 'B') { g.addColorStop(0, '#555'); g.addColorStop(1, '#111'); }
     else { g.addColorStop(0, '#fff'); g.addColorStop(1, '#ccc'); }
     x.fillStyle = g; x.fill();
-    x.strokeStyle = color === 'B' ? '#000' : '#999'; x.lineWidth = 1; x.stroke();
+    x.strokeStyle = color === 'B' ? '#000' : '#999'; x.lineWidth = 1.5; x.stroke();
+    // Center dot for precision
+    x.fillStyle = color === 'B' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
+    x.beginPath(); x.arc(r, r, 3, 0, Math.PI * 2); x.fill();
     cursorCache[color] = `url(${c.toDataURL()}) ${r} ${r}, pointer`;
     return cursorCache[color];
   }
@@ -526,6 +536,19 @@ const Board = (() => {
     const fill = document.getElementById('timer-fill');
     if (!fill) return;
     fill.style.width = Math.max(0, claimTimeLeft / 10000 * 100) + '%';
+  }
+
+  function showSacrificeOverlay() {
+    const el = document.getElementById('phase-overlay');
+    if (!el) return scheduleAI();
+    const name = game.turn === 'B' ? '黑方' : '白方';
+    const icon = game.turn === 'B' ? '⚫' : '⚪';
+    el.innerHTML = `<div class="phase-title">🚫 ${icon} ${name}无路可走</div><div class="phase-sub">必须献祭一颗己方棋子</div>`;
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show');
+      scheduleAI();
+    }, 2000);
   }
 
   function showPhaseOverlay() {
