@@ -85,11 +85,11 @@ const Board = (() => {
       ctx.beginPath(); ctx.moveTo(p, MARGIN); ctx.lineTo(p, MARGIN + CELL * 4); ctx.stroke();
     }
 
-    // Star points (corners + center)
-    const stars = [[0,0],[0,4],[4,0],[4,4],[2,2]];
-    for (const [r, c] of stars) {
-      const { x, y } = toPixel(r, c);
-      ctx.fillStyle = '#6B5B3A';
+    // Intersection dots
+    for (let r = 0; r < GRID; r++)
+      for (let c = 0; c < GRID; c++) {
+        const { x, y } = toPixel(r, c);
+        ctx.fillStyle = '#6B5B3A';
       ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
     }
 
