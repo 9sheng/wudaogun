@@ -175,25 +175,13 @@ const Board = (() => {
   }
 
   function drawFormationHighlights() {
-    if (!showHints) return;
-    // Collect all cells in formations
-    const existing = new Set();
-    for (const color of ['B', 'W'])
-      for (const f of game.formations[color])
-        for (const [r, c] of f.cells) existing.add(r + ',' + c);
-
-    const isNew = new Set();
+    if (!showHints || !game.newFormations.length) return;
     for (const f of game.newFormations)
-      for (const [r, c] of f.cells) { isNew.add(r + ',' + c); existing.add(r + ',' + c); }
-
-    // Draw glow rings on formation pieces
-    for (const key of existing) {
-      const [r, c] = key.split(',').map(Number);
-      const { x, y } = toPixel(r, c);
-      const glow = isNew.has(key) ? 'rgba(231,76,60,0.5)' : 'rgba(245,215,142,0.35)';
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 8, 0, Math.PI * 2); ctx.fill();
-    }
+      for (const [r, c] of f.cells) {
+        const { x, y } = toPixel(r, c);
+        ctx.fillStyle = 'rgba(231,76,60,0.45)';
+        ctx.beginPath(); ctx.arc(x, y, PIECE_R + 8, 0, Math.PI * 2); ctx.fill();
+      }
   }
 
   function drawSelection() {
