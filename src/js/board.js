@@ -15,7 +15,7 @@ const Board = (() => {
     canvas.width = canvas.height = BOARD_SIZE;
     ctx = canvas.getContext('2d');
     canvas.addEventListener('click', onClick);
-    newGame();
+    setAI('greedy');
   }
 
   function newGame() {
