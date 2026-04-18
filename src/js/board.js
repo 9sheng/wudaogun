@@ -427,6 +427,26 @@ const Board = (() => {
     // Move count
     const moveEl = document.getElementById('move-count');
     if (moveEl) moveEl.textContent = game.phase === Game.PHASE_PLACE ? `${game.placedCount}/25` : '—';
+
+    // Cursor
+    if (canvas) canvas.style.cursor = game.phase === Game.PHASE_OVER ? 'default' : makeCursor(game.turn);
+  }
+
+  const cursorCache = {};
+  function makeCursor(color) {
+    if (cursorCache[color]) return cursorCache[color];
+    const s = 28, r = s / 2;
+    const c = document.createElement('canvas');
+    c.width = c.height = s;
+    const x = c.getContext('2d');
+    x.beginPath(); x.arc(r, r, r - 2, 0, Math.PI * 2);
+    const g = x.createRadialGradient(r - 3, r - 3, 1, r, r, r - 2);
+    if (color === 'B') { g.addColorStop(0, '#555'); g.addColorStop(1, '#111'); }
+    else { g.addColorStop(0, '#fff'); g.addColorStop(1, '#ccc'); }
+    x.fillStyle = g; x.fill();
+    x.strokeStyle = color === 'B' ? '#000' : '#999'; x.lineWidth = 1; x.stroke();
+    cursorCache[color] = `url(${c.toDataURL()}) ${r} ${r}, pointer`;
+    return cursorCache[color];
   }
 
   function updateTimerBar() {
