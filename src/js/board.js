@@ -6,7 +6,7 @@ const Board = (() => {
 
   let canvas, ctx, game, aiEngine = null, aiColor = null;
   let selected = null;
-  let claimTimer = null, claimTimeLeft = 0;
+  let claimTimer = null, claimTimeLeft = 0, claimTimeTotal = 10000;
   let showHints = true;
   let multiPinch = false;
   let soundOn = true;
@@ -217,12 +217,36 @@ const Board = (() => {
 
   function drawFormationHighlights() {
     if (!showHints || !game.newFormations.length) return;
-    for (const f of game.newFormations)
-      for (const [r, c] of f.cells) {
-        const { x, y } = toPixel(r, c);
-        ctx.fillStyle = 'rgba(255,60,60,0.7)';
-        ctx.beginPath(); ctx.arc(x, y, PIECE_R + 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,40,40,0.85)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    for (const f of game.newFormations) {
+      const cells = f.cells;
+      if (cells.length < 2) continue;
+      ctx.beginPath();
+      if (f.type === 'square') {
+        // Draw as rectangle: top-left, top-right, bottom-right, bottom-left
+        const [tl, tr, bl, br] = cells;
+        const p0 = toPixel(tl[0], tl[1]);
+        const p1 = toPixel(tr[0], tr[1]);
+        const p2 = toPixel(br[0], br[1]);
+        const p3 = toPixel(bl[0], bl[1]);
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.closePath();
+      } else {
+        const p0 = toPixel(cells[0][0], cells[0][1]);
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < cells.length; i++) {
+          const p = toPixel(cells[i][0], cells[i][1]);
+          ctx.lineTo(p.x, p.y);
+        }
       }
+      ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
   }
 
   function drawSelection() {
@@ -345,6 +369,7 @@ const Board = (() => {
   // ===================== 10-second pinch timer =====================
   function startPinchTimer() {
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
+    claimTimeTotal = 10000;
     claimTimeLeft = 10000;
     timerPaused = false;
     updateStatus();
@@ -428,13 +453,29 @@ const Board = (() => {
       if (!multiPinch && game.pinchesRemaining > 1) game.pinchesRemaining = 1;
       render();
       if (result.newFormations && result.newFormations.length > 0) {
-        updateStatus();
-        setTimeout(doAIPinch, 2000);
+        sfx('formation');
+        startAIPinchTimer();
         return;
       }
       updateStatus();
       continueGame();
     }
+  }
+
+  function startAIPinchTimer() {
+    claimTimeTotal = 2000;
+    claimTimeLeft = 2000;
+    updateStatus();
+    updateTimerBar();
+    const tick = 50;
+    claimTimer = setInterval(() => {
+      claimTimeLeft -= tick;
+      updateTimerBar();
+      if (claimTimeLeft <= 0) {
+        clearTimer();
+        doAIPinch();
+      }
+    }, tick);
   }
 
   function doAIPinch() {
@@ -502,7 +543,9 @@ const Board = (() => {
       const txt = btn.querySelector('.claim-text');
       if (txt) {
         const fname = formationNames(game.newFormations);
-        if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
+        const isAITurn = aiEngine && game.turn === aiColor;
+        if (isAITurn) txt.textContent = `🤖 ${fname}，AI正在选择掐子...`;
+        else if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
         else txt.textContent = `🎯 ${fname}，点我暂停计时，或直接掐子 (${game.pinchesRemaining})`;
       }
     }
@@ -549,7 +592,7 @@ const Board = (() => {
   function updateTimerBar() {
     const fill = document.getElementById('timer-fill');
     if (!fill) return;
-    fill.style.width = Math.max(0, claimTimeLeft / 10000 * 100) + '%';
+    fill.style.width = Math.max(0, claimTimeLeft / claimTimeTotal * 100) + '%';
   }
 
   function showSacrificeOverlay() {
