@@ -9,6 +9,7 @@ const Board = (() => {
   let claimTimer = null, claimTimeLeft = 0;
   let showHints = true;
   let multiPinch = false;
+  let soundOn = true;
   let firstPlayer = 'B';
   let lastPlaced = null;
   let pinchAnim = null; // {r, c, phase} for pinch animation
@@ -51,6 +52,8 @@ const Board = (() => {
 
   function setHints(on) { showHints = on; render(); }
   function setMultiPinch(on) { multiPinch = on; }
+  function setSound(on) { soundOn = on; }
+  function sfx(name) { if (soundOn) Sound[name](); }
 
   function toBoard(px, py) {
     const r = Math.round((py - MARGIN) / CELL);
@@ -291,12 +294,12 @@ const Board = (() => {
     if (game.state === Game.STATE_WAIT_ACTION) {
       if (game.phase === Game.PHASE_PLACE) {
         const result = Game.place(game, r, c);
-        if (result) { lastPlaced = { r, c }; afterAction(result); }
+        if (result) { sfx('place'); lastPlaced = { r, c }; afterAction(result); }
       } else {
         if (selected) {
           if (game.board[r][c] === game.turn) { selected = { r, c }; render(); return; }
           const result = Game.move(game, selected.r, selected.c, r, c);
-          if (result) { lastPlaced = { r: r, c: c }; selected = null; afterAction(result); }
+          if (result) { sfx('place'); lastPlaced = { r: r, c: c }; selected = null; afterAction(result); }
         } else if (game.board[r][c] === game.turn) {
           selected = { r, c }; render();
         }
@@ -304,6 +307,7 @@ const Board = (() => {
     } else if (game.state === Game.STATE_WAIT_PINCH_SELECT) {
       const result = Game.pinch(game, r, c);
       if (result) {
+        sfx('pinch');
         pinchAnim = { r, c, phase: 'removed' };
         render(); updateStatus();
         setTimeout(() => { pinchAnim = null; render(); }, 800);
@@ -329,6 +333,7 @@ const Board = (() => {
     if (game.phase === Game.PHASE_OVER) return showWinner();
 
     if (result.newFormations && result.newFormations.length > 0) {
+      sfx('formation');
       startPinchTimer();
     } else {
       continueGame();
@@ -411,10 +416,10 @@ const Board = (() => {
     let result;
     if (game.phase === Game.PHASE_PLACE) {
       const m = aiEngine.choosePlace(game);
-      if (m) { result = Game.place(game, m.r, m.c); lastPlaced = { r: m.r, c: m.c }; }
+      if (m) { result = Game.place(game, m.r, m.c); lastPlaced = { r: m.r, c: m.c }; sfx('place'); }
     } else {
       const m = aiEngine.chooseMove(game);
-      if (m) { result = Game.move(game, m.fr, m.fc, m.tr, m.tc); lastPlaced = { r: m.tr, c: m.tc }; }
+      if (m) { result = Game.move(game, m.fr, m.fc, m.tr, m.tc); lastPlaced = { r: m.tr, c: m.tc }; sfx('place'); }
     }
 
     if (result) {
@@ -442,6 +447,7 @@ const Board = (() => {
     setTimeout(() => {
       // Phase 2: execute pinch
       const result = Game.pinch(game, t[0], t[1]);
+      sfx('pinch');
       pinchAnim = { r: t[0], c: t[1], phase: 'removed' };
       render(); updateStatus();
 
@@ -570,6 +576,7 @@ const Board = (() => {
 
   function showWinner() {
     render(); updateStatus();
+    sfx('win');
     const overlay = document.getElementById('winner-overlay');
     if (overlay && game.winner) {
       const icon = game.winner === 'B' ? '⚫' : '⚪';
@@ -599,5 +606,5 @@ const Board = (() => {
     showWinner();
   }
 
-  return { init, newGame, setAI, setFirst, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, surrender, render };
+  return { init, newGame, setAI, setFirst, setHints, setMultiPinch, setSound, claimPinch, pauseTimer, undoMove, surrender, render };
 })();

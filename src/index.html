@@ -67,6 +67,8 @@
       <label for="hints-toggle">显示成形提示</label>
       <input type="checkbox" id="multi-pinch-toggle" onchange="Board.setMultiPinch(this.checked)">
       <label for="multi-pinch-toggle">掐多子</label>
+      <input type="checkbox" id="sound-toggle" checked onchange="Board.setSound(this.checked)">
+      <label for="sound-toggle">🔊 音效</label>
     </div>
 
     <div class="rules">
@@ -84,6 +86,7 @@
   <script src="js/ai/mcts.js"></script>
   <script src="js/ai/negamax.js"></script>
   <script src="js/ai/ai.js"></script>
+  <script src="js/sound.js"></script>
   <script src="js/board.js"></script>
   <script>Board.init(document.getElementById('board'));</script>
 </body>
