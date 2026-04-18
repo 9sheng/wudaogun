@@ -552,12 +552,12 @@ const Board = (() => {
 
     let msg = '';
     if (blindTimer) {
-      msg = '结束本轮，换手';
+      msg = '掐子结束，换手';
     } else switch (game.state) {
       case Game.STATE_WAIT_ACTION:
         msg = game.phase === Game.PHASE_PLACE ? '请落子' : '选择棋子移动';
         break;
-      case Game.STATE_WAIT_PINCH_SELECT: msg = showHints ? `${formationNames(game.newFormations)}！请掐子 (${game.pinchesRemaining}次)` : '结束本轮，换手'; break;
+      case Game.STATE_WAIT_PINCH_SELECT: msg = showHints ? `${formationNames(game.newFormations)}！请掐子 (${game.pinchesRemaining}次)` : '掐子结束，换手'; break;
       case Game.STATE_WAIT_SACRIFICE: msg = '无路可走，请献祭一子'; break;
       default: if (game.winner) msg = `${game.winner === 'B' ? '黑方' : '白方'}获胜！`; break;
     }
@@ -576,7 +576,7 @@ const Board = (() => {
       if (txt) {
         const fname = formationNames(game.newFormations);
         const isAITurn = aiEngine && game.turn === aiColor;
-        if (blindTimer || (!showHints && !isAITurn)) txt.textContent = `⏳ 结束本轮，换手（可掐子）`;
+        if (blindTimer || (!showHints && !isAITurn)) txt.textContent = `⏳ 掐子结束，换手`;
         else if (isAITurn) txt.textContent = `🤖 ${fname}，AI正在选择掐子...`;
         else if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
         else txt.textContent = `🎯 ${fname}，点我暂停计时，或直接掐子 (${game.pinchesRemaining})`;
