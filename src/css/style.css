@@ -1,0 +1,24 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: #ecf0f1; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.container { text-align: center; }
+h1 { font-size: 1.6em; margin-bottom: 8px; }
+h1 span { font-size: 0.6em; color: #95a5a6; }
+
+#status { background: #34495e; padding: 8px 16px; border-radius: 6px; margin: 8px 0; font-size: 0.95em; min-height: 36px; }
+#piece-count { font-size: 0.9em; color: #bdc3c7; margin-bottom: 4px; }
+
+.timer-wrap { width: 400px; height: 6px; background: #34495e; border-radius: 3px; margin: 4px auto 8px; overflow: hidden; }
+#timer-bar { height: 100%; background: #e74c3c; width: 0; display: none; transition: width 50ms linear; border-radius: 3px; }
+
+canvas { display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); cursor: pointer; }
+
+.controls { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.controls button, .controls select { padding: 6px 14px; border: none; border-radius: 4px; font-size: 0.9em; cursor: pointer; background: #3498db; color: #fff; }
+.controls button:hover, .controls select:hover { background: #2980b9; }
+#btn-claim { background: #e74c3c; font-weight: bold; display: none; animation: pulse 0.5s infinite alternate; }
+@keyframes pulse { to { transform: scale(1.08); } }
+
+.controls label { display: flex; align-items: center; gap: 4px; font-size: 0.85em; color: #bdc3c7; }
+.controls input[type=checkbox] { accent-color: #3498db; }
+
+.info { margin-top: 12px; font-size: 0.75em; color: #7f8c8d; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.5; }
