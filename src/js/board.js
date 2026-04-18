@@ -334,7 +334,7 @@ const Board = (() => {
   // ===================== AI =====================
   function scheduleAI() {
     if (!aiEngine || game.turn !== aiColor || game.phase === Game.PHASE_OVER) return;
-    setTimeout(doAITurn, 400);
+    setTimeout(doAITurn, 600);
   }
 
   function doAITurn() {
