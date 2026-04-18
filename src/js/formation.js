@@ -92,11 +92,19 @@ const Formation = (() => {
   }
 
   function pinchTargets(board, opponentColor) {
-    const targets = [];
+    const formations = findAll(board, opponentColor);
+    const inFormation = new Set();
+    for (const f of formations)
+      for (const [r, c] of f.cells) inFormation.add(r + ',' + c);
+
+    const free = [], all = [];
     for (let r = 0; r < SIZE; r++)
       for (let c = 0; c < SIZE; c++)
-        if (board[r][c] === opponentColor) targets.push([r, c]);
-    return targets;
+        if (board[r][c] === opponentColor) {
+          all.push([r, c]);
+          if (!inFormation.has(r + ',' + c)) free.push([r, c]);
+        }
+    return free.length > 0 ? free : all;
   }
 
   return { findAll, findNew, pinchCount, pinchTargets, DIAG_LINES, SIZE };

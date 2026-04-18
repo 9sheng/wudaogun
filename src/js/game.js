@@ -117,6 +117,9 @@ const Game = (() => {
     if (g.state !== STATE_WAIT_PINCH_SELECT || g.pinchesRemaining <= 0) return false;
     const opp = g.turn === 'B' ? 'W' : 'B';
     if (g.board[r][c] !== opp) return false;
+    // Only allow pinching valid targets (non-formation pieces first)
+    const targets = Formation.pinchTargets(g.board, opp);
+    if (!targets.some(t => t[0] === r && t[1] === c)) return false;
 
     if (g.phase === PHASE_PLACE) {
       // Mark as dead (stays on board but inactive)
