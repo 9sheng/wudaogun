@@ -205,6 +205,7 @@ const Game = (() => {
     for (const d of g.deadPieces) g.board[d.r][d.c] = null;
     g.deadPieces = [];
     g.phase = PHASE_MOVE;
+    if (checkWin(g)) return;
     g.formations.B = Formation.findAll(g.board, 'B');
     g.formations.W = Formation.findAll(g.board, 'W');
     if (!hasLegalMoves(g, g.turn)) {

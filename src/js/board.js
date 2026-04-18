@@ -53,7 +53,7 @@ const Board = (() => {
     ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
     drawBoard();
     drawLastMove();
-    drawFormationLines();
+    drawFormationHighlights();
     drawPieces();
     drawSelection();
     if (game.state === Game.STATE_WAIT_PINCH_SELECT) drawPinchTargets();
@@ -161,37 +161,26 @@ const Board = (() => {
     }
   }
 
-  function drawFormationLines() {
+  function drawFormationHighlights() {
     if (!showHints) return;
-    // Existing formations (subtle)
-    for (const color of ['B', 'W']) {
-      for (const f of game.formations[color]) {
-        drawFormationLine(f, color === 'B' ? 'rgba(50,50,50,0.25)' : 'rgba(200,200,200,0.3)', 2.5, [6, 4]);
-      }
-    }
-    // New formations (bold red glow)
-    for (const f of game.newFormations) {
-      drawFormationLine(f, 'rgba(231,76,60,0.4)', 6, []);
-      drawFormationLine(f, '#e74c3c', 2.5, []);
-    }
-  }
+    // Collect all cells in formations
+    const existing = new Set();
+    for (const color of ['B', 'W'])
+      for (const f of game.formations[color])
+        for (const [r, c] of f.cells) existing.add(r + ',' + c);
 
-  function drawFormationLine(f, color, width, dash) {
-    const sorted = [...f.cells].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.setLineDash(dash);
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    const s = toPixel(sorted[0][0], sorted[0][1]);
-    ctx.moveTo(s.x, s.y);
-    for (let i = 1; i < sorted.length; i++) {
-      const p = toPixel(sorted[i][0], sorted[i][1]);
-      ctx.lineTo(p.x, p.y);
+    const isNew = new Set();
+    for (const f of game.newFormations)
+      for (const [r, c] of f.cells) { isNew.add(r + ',' + c); existing.add(r + ',' + c); }
+
+    // Draw glow rings on formation pieces
+    for (const key of existing) {
+      const [r, c] = key.split(',').map(Number);
+      const { x, y } = toPixel(r, c);
+      const glow = isNew.has(key) ? 'rgba(231,76,60,0.5)' : 'rgba(245,215,142,0.35)';
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 8, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.lineCap = 'butt';
   }
 
   function drawSelection() {
@@ -287,6 +276,7 @@ const Board = (() => {
   function afterAction(result) {
     render();
     updateStatus();
+    if (game.phase === Game.PHASE_OVER) return showWinner();
     if (result.newFormations && result.newFormations.length > 0) {
       startPinchTimer();
     } else {
