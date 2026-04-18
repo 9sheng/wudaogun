@@ -69,14 +69,18 @@ const AIMinimax = (() => {
     const depth = g.phase === Game.PHASE_PLACE ? MAX_DEPTH_PLACE : MAX_DEPTH_MOVE;
     const board = g.board.map(r => [...r]);
     moves = orderMoves(moves, board, g.turn, g.phase);
-    let best = moves[0], bestScore = -Infinity;
+    let bestScore = -Infinity;
+    const scored = [];
     for (const m of moves) {
       applyMove(board, m, g.turn);
       const s = minimax(board, depth - 1, -Infinity, Infinity, false, g.turn, g.phase);
       undoMove(board, m, g.turn);
-      if (s > bestScore) { bestScore = s; best = m; }
+      scored.push({ m, s });
+      if (s > bestScore) bestScore = s;
     }
-    return best;
+    const threshold = bestScore - 3;
+    const top = scored.filter(x => x.s >= threshold);
+    return top[Math.floor(Math.random() * top.length)].m;
   }
 
   function choosePlace(g) { return bestMove(g); }

@@ -52,14 +52,13 @@ const AINegamax = (() => {
     moves = scored.map(x => x.m);
 
     deadline = Date.now() + TIME_BUDGET;
-    let bestMove = moves[0];
     const maxDepth = g.phase === Game.PHASE_PLACE ? 6 : 8;
 
     // Iterative deepening
+    let lastScores = scored;
     for (let depth = 1; depth <= maxDepth; depth++) {
       aborted = false;
       let bestVal = -Infinity;
-      let bestAtDepth = moves[0];
       const scores = [];
 
       for (const m of moves) {
@@ -68,18 +67,21 @@ const AINegamax = (() => {
         undoMove(board, m, g.turn);
         if (aborted) break;
         scores.push({ m, s: val });
-        if (val > bestVal) { bestVal = val; bestAtDepth = m; }
+        if (val > bestVal) { bestVal = val; }
       }
 
       if (!aborted) {
-        bestMove = bestAtDepth;
+        lastScores = scores;
         // Reorder moves by score for next iteration
         scores.sort((a, b) => b.s - a.s);
         moves = scores.map(x => x.m);
       }
       if (Date.now() > deadline) break;
     }
-    return bestMove;
+    // Pick randomly among top moves
+    const best = lastScores.reduce((a, b) => a.s > b.s ? a : b).s;
+    const top = lastScores.filter(x => x.s >= best - 3);
+    return top[Math.floor(Math.random() * top.length)].m;
   }
 
   function choosePlace(g) { return search(g); }

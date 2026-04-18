@@ -7,14 +7,18 @@ const AIGreedy = (() => {
   }
 
   function bestOf(moves, g, applyFn) {
-    let best = null, bestScore = -Infinity;
+    let bestScore = -Infinity;
+    const scored = [];
     for (const m of moves) {
       const sim = Game.clone(g);
       applyFn(sim, m);
       const s = AIEval.evaluate(sim.board, g.turn, g.phase);
-      if (s > bestScore) { bestScore = s; best = m; }
+      scored.push({ m, s });
+      if (s > bestScore) bestScore = s;
     }
-    return best;
+    const threshold = bestScore - 5;
+    const top = scored.filter(x => x.s >= threshold);
+    return top[Math.floor(Math.random() * top.length)].m;
   }
 
   function choosePlace(g) {
