@@ -575,8 +575,8 @@ const Board = (() => {
       if (txt) {
         const fname = formationNames(game.newFormations);
         const isAITurn = aiEngine && game.turn === aiColor;
-        if (isAITurn) txt.textContent = `🤖 ${fname}，AI正在选择掐子...`;
-        else if (!showHints) txt.textContent = `⏳ 结束本轮，换手（可掐子）`;
+        if (blindTimer || (!showHints && !isAITurn)) txt.textContent = `⏳ 结束本轮，换手（可掐子）`;
+        else if (isAITurn) txt.textContent = `🤖 ${fname}，AI正在选择掐子...`;
         else if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
         else txt.textContent = `🎯 ${fname}，点我暂停计时，或直接掐子 (${game.pinchesRemaining})`;
       }
