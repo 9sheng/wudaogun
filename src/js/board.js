@@ -383,6 +383,13 @@ const Board = (() => {
   }
 
   // ===================== UI updates =====================
+  const TYPE_NAMES = { diag3: '三斜', diag4: '四斜', diag5: '通天', line5: '大棍', square: '方' };
+  function formationNames(formations) {
+    if (!formations || !formations.length) return '成形';
+    const names = [...new Set(formations.map(f => TYPE_NAMES[f.type] || f.type))];
+    return names.join('＋');
+  }
+
   function updateStatus() {
     const el = document.getElementById('status');
     if (!el) return;
@@ -396,7 +403,7 @@ const Board = (() => {
       case Game.STATE_WAIT_ACTION:
         msg = game.phase === Game.PHASE_PLACE ? '请落子' : '选择棋子移动';
         break;
-      case Game.STATE_WAIT_PINCH_SELECT: msg = `成形！请选择要掐的棋子 (${game.pinchesRemaining}次)`; break;
+      case Game.STATE_WAIT_PINCH_SELECT: msg = `${formationNames(game.newFormations)}！请掐子 (${game.pinchesRemaining}次)`; break;
       case Game.STATE_WAIT_SACRIFICE: msg = '无路可走，请献祭一子'; break;
       default: if (game.winner) msg = `${game.winner === 'B' ? '黑方' : '白方'}获胜！`; break;
     }
@@ -413,8 +420,9 @@ const Board = (() => {
       btn.classList.toggle('active', show);
       const txt = btn.querySelector('.claim-text');
       if (txt) {
-        if (timerPaused) txt.textContent = `⏸ 已暂停，请选择要掐的棋子 (${game.pinchesRemaining})`;
-        else txt.textContent = `🎯 请掐子！点此暂停倒计时 (${game.pinchesRemaining})`;
+        const fname = formationNames(game.newFormations);
+        if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
+        else txt.textContent = `🎯 ${fname}，请掐子！点此暂停 (${game.pinchesRemaining})`;
       }
     }
 
