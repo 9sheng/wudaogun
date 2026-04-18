@@ -227,50 +227,44 @@ describe('Game: placement', () => {
     }
   });
 
-  it('should detect formation and enter claim state', () => {
+  it('should detect formation and enter pinch select state', () => {
     const g = Game.create();
-    // Manually set up board for a diag3: (0,2)-(1,3)-(2,4)
     g.board[0][2] = 'B'; g.board[1][3] = 'B';
     g.formations.B = Formation.findAll(g.board, 'B');
     g.placedCount = 2;
-    // Place the completing piece
     const result = Game.place(g, 2, 4);
     assert(result, 'Place should succeed');
     assert(result.newFormations.length > 0, 'Should detect new formation');
-    eq(g.state, Game.STATE_WAIT_PINCH_CLAIM);
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
   });
 });
 
 describe('Game: pinch flow', () => {
-  it('should allow pinch after claim', () => {
+  it('should allow direct pinch after formation', () => {
     const g = Game.create();
     g.board[0][2] = 'B'; g.board[1][3] = 'B';
-    g.board[0][0] = 'W'; // opponent piece to pinch
+    g.board[0][0] = 'W';
     g.formations.B = Formation.findAll(g.board, 'B');
     g.placedCount = 3;
-    Game.place(g, 2, 4); // completes diag3
-    eq(g.state, Game.STATE_WAIT_PINCH_CLAIM);
-
-    const claim = Game.claimPinch(g);
-    assert(claim.valid, 'Claim should be valid');
+    Game.place(g, 2, 4);
     eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
 
     const pinchResult = Game.pinch(g, 0, 0);
     assert(pinchResult, 'Pinch should succeed');
-    eq(g.board[0][0], 'DW'); // marked dead in phase 1
+    eq(g.board[0][0], 'DW');
   });
 
-  it('should expire claim and end turn', () => {
+  it('should expire and end turn', () => {
     const g = Game.create();
     g.board[0][2] = 'B'; g.board[1][3] = 'B';
     g.formations.B = Formation.findAll(g.board, 'B');
     g.placedCount = 2;
     Game.place(g, 2, 4);
-    eq(g.state, Game.STATE_WAIT_PINCH_CLAIM);
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
 
     Game.expireClaim(g);
     eq(g.state, Game.STATE_WAIT_ACTION);
-    eq(g.turn, 'W'); // turn passed
+    eq(g.turn, 'W');
   });
 
   it('should reject pinch on own piece', () => {
@@ -279,8 +273,7 @@ describe('Game: pinch flow', () => {
     g.formations.B = Formation.findAll(g.board, 'B');
     g.placedCount = 3;
     Game.place(g, 2, 4);
-    Game.claimPinch(g);
-    const result = Game.pinch(g, 3, 3); // own piece
+    const result = Game.pinch(g, 3, 3);
     eq(result, false);
   });
 });
@@ -295,7 +288,7 @@ describe('Game: phase transition', () => {
         g.placedCount++;
         turn = turn === 'B' ? 'W' : 'B';
         // Handle any claim states by expiring
-        if (g.state === Game.STATE_WAIT_PINCH_CLAIM) Game.expireClaim(g);
+        if (g.state === Game.STATE_WAIT_PINCH_SELECT) Game.expireClaim(g);
       }
     // Manually trigger transition since we bypassed Game.place
     g.placedCount = 25;
@@ -315,7 +308,7 @@ describe('Game: phase transition', () => {
     g2.state = Game.STATE_WAIT_ACTION;
     Game.place(g2, 4, 4);
     // Should be in phase 2 now (or claim state if formation detected)
-    if (g2.state === Game.STATE_WAIT_PINCH_CLAIM) Game.expireClaim(g2);
+    if (g2.state === Game.STATE_WAIT_PINCH_SELECT) Game.expireClaim(g2);
     eq(g2.phase, Game.PHASE_MOVE);
   });
 });

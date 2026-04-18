@@ -82,7 +82,7 @@ const Game = (() => {
     if (newF.length > 0) {
       g.newFormations = newF;
       g.pinchesRemaining = Formation.pinchCount(newF);
-      g.state = STATE_WAIT_PINCH_CLAIM;
+      g.state = STATE_WAIT_PINCH_SELECT;
       return { action: 'placed', newFormations: newF };
     }
     endTurn(g);
@@ -105,7 +105,7 @@ const Game = (() => {
 
   // 5s window expired without claiming
   function expireClaim(g) {
-    if (g.state !== STATE_WAIT_PINCH_CLAIM) return false;
+    if (g.state !== STATE_WAIT_PINCH_SELECT) return false;
     g.newFormations = [];
     g.pinchesRemaining = 0;
     endTurn(g);
@@ -163,7 +163,7 @@ const Game = (() => {
     if (newF.length > 0) {
       g.newFormations = newF;
       g.pinchesRemaining = Formation.pinchCount(newF);
-      g.state = STATE_WAIT_PINCH_CLAIM;
+      g.state = STATE_WAIT_PINCH_SELECT;
       return { action: 'moved', newFormations: newF };
     }
     endTurn(g);

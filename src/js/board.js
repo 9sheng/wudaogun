@@ -246,7 +246,7 @@ const Board = (() => {
   // ===================== Click handling =====================
   function onClick(e) {
     if (game.phase === Game.PHASE_OVER) return;
-    if (aiEngine && game.turn === aiColor && game.state !== Game.STATE_WAIT_PINCH_CLAIM) return;
+    if (aiEngine && game.turn === aiColor && game.state !== Game.STATE_WAIT_PINCH_SELECT) return;
 
     const rect = canvas.getBoundingClientRect();
     const scale = canvas.width / rect.width;
@@ -271,8 +271,8 @@ const Board = (() => {
       const result = Game.pinch(game, r, c);
       if (result) {
         render(); updateStatus();
-        if (result.gameOver) return showWinner();
-        if (!result.more) scheduleAI();
+        if (result.gameOver) { clearTimer(); return showWinner(); }
+        if (!result.more) { clearTimer(); scheduleAI(); }
       }
     } else if (game.state === Game.STATE_WAIT_SACRIFICE) {
       const result = Game.sacrifice(game, r, c);
@@ -288,17 +288,16 @@ const Board = (() => {
     render();
     updateStatus();
     if (result.newFormations && result.newFormations.length > 0) {
-      startClaimTimer();
+      startPinchTimer();
     } else {
       scheduleAI();
     }
   }
 
-  // ===================== 5-second claim timer =====================
-  function startClaimTimer() {
-    // IMPORTANT: clear any existing timer FIRST, then set time
+  // ===================== 10-second pinch timer =====================
+  function startPinchTimer() {
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
-    claimTimeLeft = 5000;
+    claimTimeLeft = 10000;
     updateStatus();
     updateTimerBar();
     const tick = 50;
@@ -321,14 +320,7 @@ const Board = (() => {
   }
 
   function claimPinch() {
-    if (game.state !== Game.STATE_WAIT_PINCH_CLAIM) return;
-    clearTimer();
-    const result = Game.claimPinch(game);
-    render(); updateStatus();
-    if (result && !result.valid) scheduleAI();
-    if (result && result.valid && aiEngine && game.turn === aiColor) {
-      setTimeout(doAIPinch, 300);
-    }
+    // No longer used - pinch selection is direct
   }
 
   // ===================== AI =====================
@@ -362,15 +354,9 @@ const Board = (() => {
 
     if (result) {
       render();
-      if (result.newFormations && result.newFormations.length > 0 && AI.shouldClaimPinch(game)) {
-        startClaimTimer();
-        setTimeout(() => {
-          if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
-          claimTimeLeft = 0; updateTimerBar();
-          Game.claimPinch(game);
-          render(); updateStatus();
-          setTimeout(doAIPinch, 300);
-        }, 600);
+      if (result.newFormations && result.newFormations.length > 0) {
+        updateStatus();
+        setTimeout(doAIPinch, 500);
         return;
       }
       updateStatus();
@@ -402,8 +388,7 @@ const Board = (() => {
       case Game.STATE_WAIT_ACTION:
         msg = game.phase === Game.PHASE_PLACE ? '请落子' : '选择棋子移动';
         break;
-      case Game.STATE_WAIT_PINCH_CLAIM: msg = '发现成形！请点击掐子按钮'; break;
-      case Game.STATE_WAIT_PINCH_SELECT: msg = `请选择要掐的棋子 (${game.pinchesRemaining}次)`; break;
+      case Game.STATE_WAIT_PINCH_SELECT: msg = `成形！请选择要掐的棋子 (${game.pinchesRemaining}次)`; break;
       case Game.STATE_WAIT_SACRIFICE: msg = '无路可走，请献祭一子'; break;
       default: if (game.winner) msg = `${game.winner === 'B' ? '黑方' : '白方'}获胜！`; break;
     }
@@ -412,16 +397,14 @@ const Board = (() => {
       `<span class="turn-indicator ${game.turn === 'B' ? 'turn-black' : 'turn-white'}">${turnIcon} ${turnName}</span> ` +
       `<span class="status-msg">${msg}</span>`;
 
-    // Claim button - visible during claim window AND pinch selection
+    // Claim button - shows during pinch selection as status indicator
     const btn = document.getElementById('btn-claim');
     if (btn) {
-      const showClaim = game.state === Game.STATE_WAIT_PINCH_CLAIM;
-      const showSelect = game.state === Game.STATE_WAIT_PINCH_SELECT;
-      const show = showClaim || showSelect;
+      const show = game.state === Game.STATE_WAIT_PINCH_SELECT;
       btn.style.display = show ? 'flex' : 'none';
       btn.classList.toggle('active', show);
       const txt = btn.querySelector('.claim-text');
-      if (txt) txt.textContent = showSelect ? `🎯 请选择要掐的棋子 (${game.pinchesRemaining})` : '✋ 我要掐子！';
+      if (txt) txt.textContent = `🎯 请掐子！选择对方棋子 (${game.pinchesRemaining})`;
     }
 
     // Piece counts
@@ -438,7 +421,7 @@ const Board = (() => {
   function updateTimerBar() {
     const fill = document.getElementById('timer-fill');
     if (!fill) return;
-    fill.style.width = Math.max(0, claimTimeLeft / 5000 * 100) + '%';
+    fill.style.width = Math.max(0, claimTimeLeft / 10000 * 100) + '%';
   }
 
   function showWinner() { render(); updateStatus(); }
