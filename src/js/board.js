@@ -9,6 +9,7 @@ const Board = (() => {
   let claimTimer = null, claimTimeLeft = 0;
   let showHints = true;
   let multiPinch = false;
+  let firstPlayer = 'B';
   let lastPlaced = null;
 
   function init(canvasEl) {
@@ -24,15 +25,23 @@ const Board = (() => {
     selected = null;
     lastPlaced = null;
     game = Game.create();
+    game.turn = firstPlayer;
+    if (aiEngine) aiColor = firstPlayer === 'B' ? 'W' : 'B';
     const overlay = document.getElementById('winner-overlay');
     if (overlay) overlay.classList.remove('show');
     render();
     updateStatus();
+    scheduleAI();
   }
 
   function setAI(level) {
     aiEngine = level ? AI.get(level) : null;
-    aiColor = aiEngine ? 'W' : null;
+    aiColor = aiEngine ? (firstPlayer === 'B' ? 'W' : 'B') : null;
+    newGame();
+  }
+
+  function setFirst(color) {
+    firstPlayer = color;
     newGame();
   }
 
@@ -484,5 +493,5 @@ const Board = (() => {
     }
   }
 
-  return { init, newGame, setAI, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, render };
+  return { init, newGame, setAI, setFirst, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, render };
 })();

@@ -53,6 +53,10 @@
         <option value="minimax">🤖 AI: 极小极大</option>
         <option value="mcts">🤖 AI: 蒙特卡洛</option>
       </select>
+      <select id="first-select" onchange="Board.setFirst(this.value)">
+        <option value="B">⚫ 黑先</option>
+        <option value="W">⚪ 白先</option>
+      </select>
     </div>
 
     <div class="toggle-row">
