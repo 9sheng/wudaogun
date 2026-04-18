@@ -1,4 +1,4 @@
-// Unit tests for 五阶精策棋
+// Unit tests for 五导棍
 // Run: node src/test/test.js
 
 // Minimal test framework
