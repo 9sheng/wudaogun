@@ -328,18 +328,8 @@ const Board = (() => {
     updateStatus();
     if (game.phase === Game.PHASE_OVER) return showWinner();
 
-    // Phase transition overlay
-    if (lastPhase === Game.PHASE_PLACE && game.phase === Game.PHASE_MOVE) {
-      lastPhase = game.phase;
-      showPhaseOverlay();
-      return;
-    }
-    lastPhase = game.phase;
-
     if (result.newFormations && result.newFormations.length > 0) {
       startPinchTimer();
-    } else if (game.state === Game.STATE_WAIT_SACRIFICE) {
-      showSacrificeOverlay();
     } else {
       continueGame();
     }
@@ -386,6 +376,12 @@ const Board = (() => {
   // ===================== AI =====================
   function continueGame() {
     if (game.phase === Game.PHASE_OVER) return showWinner();
+    if (lastPhase === Game.PHASE_PLACE && game.phase === Game.PHASE_MOVE) {
+      lastPhase = game.phase;
+      showPhaseOverlay();
+      return;
+    }
+    lastPhase = game.phase;
     if (game.state === Game.STATE_WAIT_SACRIFICE) {
       showSacrificeOverlay();
       return;
