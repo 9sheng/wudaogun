@@ -120,7 +120,7 @@ const Board = (() => {
   function drawLastMove() {
     if (!lastPlaced) return;
     const { x, y } = toPixel(lastPlaced.r, lastPlaced.c);
-    ctx.fillStyle = 'rgba(255, 180, 0, 0.25)';
+    ctx.fillStyle = 'rgba(255, 200, 0, 0.5)';
     ctx.beginPath(); ctx.arc(x, y, PIECE_R + 6, 0, Math.PI * 2); ctx.fill();
   }
 
@@ -179,7 +179,7 @@ const Board = (() => {
     for (const f of game.newFormations)
       for (const [r, c] of f.cells) {
         const { x, y } = toPixel(r, c);
-        ctx.fillStyle = 'rgba(231,76,60,0.45)';
+        ctx.fillStyle = 'rgba(255,60,60,0.7)';
         ctx.beginPath(); ctx.arc(x, y, PIECE_R + 8, 0, Math.PI * 2); ctx.fill();
       }
   }
