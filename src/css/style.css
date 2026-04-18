@@ -153,6 +153,7 @@ canvas {
   cursor: pointer;
   max-width: 100%;
   height: auto !important;
+  touch-action: none;
 }
 
 /* Winner overlay */
@@ -227,3 +228,15 @@ canvas {
   padding: 0 10px;
 }
 .rules b { color: #7a8ba6; }
+
+/* Mobile responsive */
+@media (max-width: 520px) {
+  body { padding: 12px; }
+  .container { gap: 10px; }
+  .header h1 { font-size: 1.4em; }
+  .score-panel { padding: 8px 16px; gap: 14px; }
+  #status { font-size: 0.82em; padding: 8px 12px; }
+  #btn-claim { padding: 12px; font-size: 1em; }
+  .controls button, .controls select { padding: 8px 10px; font-size: 0.8em; min-width: 60px; }
+  .rules { font-size: 0.7em; }
+}

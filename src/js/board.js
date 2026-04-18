@@ -17,6 +17,7 @@ const Board = (() => {
     canvas.width = canvas.height = BOARD_SIZE;
     ctx = canvas.getContext('2d');
     canvas.addEventListener('click', onClick);
+    canvas.addEventListener('touchend', onTouch, { passive: false });
     setAI('greedy');
   }
 
@@ -231,6 +232,12 @@ const Board = (() => {
     ctx.arcTo(x, y + h, x, y, r);
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
+  }
+
+  function onTouch(e) {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    onClick({ clientX: t.clientX, clientY: t.clientY });
   }
 
   // ===================== Click handling =====================
