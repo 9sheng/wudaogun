@@ -100,9 +100,6 @@ body {
 .turn-white { color: #fff; }
 .status-msg { color: #a0aec0; }
 
-/* Timer bar - hidden, merged into claim button */
-#timer-bar { display: none; }
-
 /* Claim button with integrated timer */
 #btn-claim {
   display: none;
