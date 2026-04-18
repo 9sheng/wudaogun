@@ -78,7 +78,7 @@ const Board = (() => {
     drawPieces();
     drawPinchAnim();
     drawSelection();
-    if (game.state === Game.STATE_WAIT_PINCH_SELECT) drawPinchTargets();
+    if (game.state === Game.STATE_WAIT_PINCH_SELECT && showHints) drawPinchTargets();
   }
 
   function drawPinchAnim() {
