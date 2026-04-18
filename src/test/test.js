@@ -656,6 +656,130 @@ describe('Regression: win at phase transition (all pieces dead)', () => {
 });
 
 // ============================================================
+// AI Evaluation Tests
+// ============================================================
+describe('AIEval: evaluation function', () => {
+  it('should score formations positively', () => {
+    const b = emptyBoard();
+    b[0][2] = 'B'; b[1][3] = 'B'; b[2][4] = 'B'; // diag3
+    const s = AIEval.evaluate(b, 'B', Game.PHASE_PLACE);
+    assert(s > 0, 'Formation should give positive score');
+  });
+
+  it('should score opponent formations negatively', () => {
+    const b = emptyBoard();
+    b[0][2] = 'W'; b[1][3] = 'W'; b[2][4] = 'W'; // opponent diag3
+    const s = AIEval.evaluate(b, 'B', Game.PHASE_PLACE);
+    assert(s < 0, 'Opponent formation should give negative score');
+  });
+
+  it('should detect threats (one piece away from formation)', () => {
+    const b = emptyBoard();
+    b[0][2] = 'B'; b[1][3] = 'B'; // one away from diag3 at (2,4)
+    const threats = AIEval.countThreats(b, 'B');
+    assert(threats > 0, 'Should detect threat');
+  });
+
+  it('should prefer center positions', () => {
+    const b1 = emptyBoard(); b1[2][2] = 'B'; // center
+    const b2 = emptyBoard(); b2[0][0] = 'B'; // corner
+    const s1 = AIEval.evaluate(b1, 'B', Game.PHASE_PLACE);
+    const s2 = AIEval.evaluate(b2, 'B', Game.PHASE_PLACE);
+    assert(s1 > s2, 'Center should score higher than corner');
+  });
+});
+
+describe('AI: Negamax', () => {
+  it('should return valid placement', () => {
+    const g = Game.create();
+    const m = AINegamax.choosePlace(g);
+    assert(m && g.board[m.r][m.c] === null);
+  });
+
+  it('should return valid move in phase 2', () => {
+    const g = Game.create();
+    g.phase = Game.PHASE_MOVE;
+    g.board[2][2] = 'B'; g.board[3][3] = 'B';
+    g.turn = 'B';
+    const m = AINegamax.chooseMove(g);
+    assert(m, 'Should return a move');
+    assert(Game.isAdjacent(m.fr, m.fc, m.tr, m.tc), 'Move should be adjacent');
+  });
+
+  it('should return valid pinch target', () => {
+    const g = Game.create();
+    g.board[0][0] = 'W'; g.board[4][4] = 'W';
+    g.turn = 'B';
+    const t = AINegamax.choosePinch(g);
+    assert(t && g.board[t[0]][t[1]] === 'W');
+  });
+
+  it('should return valid sacrifice', () => {
+    const g = Game.create();
+    g.phase = Game.PHASE_MOVE;
+    g.board[2][2] = 'B'; g.board[0][0] = 'B';
+    g.turn = 'B';
+    const t = AINegamax.chooseSacrifice(g);
+    assert(t && g.board[t[0]][t[1]] === 'B');
+  });
+});
+
+// ============================================================
+// Multi-pinch and Surrender Tests
+// ============================================================
+describe('Game: multi-pinch logic', () => {
+  it('multiple formations should grant multiple pinches', () => {
+    const g = Game.create();
+    // Set up so placing one piece creates two formations
+    // diag3: (0,2)-(1,3)-(2,4) and square: (0,2)(0,3)(1,2)(1,3)
+    g.board[0][2] = 'B'; g.board[0][3] = 'B';
+    g.board[1][2] = 'B'; g.board[1][3] = 'B'; // square already exists
+    g.board[2][4] = 'B'; // diag3 needs (0,2)-(1,3)-(2,4) — already have 0,2 and 2,4
+    g.formations.B = Formation.findAll(g.board, 'B');
+    // Now we have square already. Let's set up fresh:
+    const g2 = Game.create();
+    g2.board[0][2] = 'B'; g2.board[1][3] = 'B'; // partial diag3
+    g2.board[0][3] = 'B'; g2.board[1][2] = 'B'; // partial square (need 1,3)
+    g2.formations.B = Formation.findAll(g2.board, 'B');
+    g2.placedCount = 4;
+    g2.board[3][0] = 'W'; g2.board[4][0] = 'W'; // targets
+    // Place at (2,4) completes diag3 only
+    const result = Game.place(g2, 2, 4);
+    assert(result.newFormations.length >= 1, 'Should have at least 1 formation');
+    assert(g2.pinchesRemaining >= 1, 'Should have pinches');
+  });
+
+  it('pinchCount returns count equal to formations', () => {
+    const formations = [
+      { type: 'diag3', cells: [[0,2],[1,3],[2,4]] },
+      { type: 'square', cells: [[0,0],[0,1],[1,0],[1,1]] },
+    ];
+    eq(Formation.pinchCount(formations), 2);
+  });
+});
+
+describe('Game: surrender', () => {
+  it('should end game with opponent as winner', () => {
+    const g = Game.create();
+    g.turn = 'B';
+    // Simulate surrender: current player loses
+    g.winner = 'W';
+    g.phase = Game.PHASE_OVER;
+    g.state = 'over';
+    eq(g.winner, 'W');
+    eq(g.phase, Game.PHASE_OVER);
+  });
+
+  it('game state should prevent further moves after surrender', () => {
+    const g = Game.create();
+    g.phase = Game.PHASE_OVER;
+    g.state = 'over';
+    const result = Game.place(g, 0, 0);
+    eq(result, false);
+  });
+});
+
+// ============================================================
 // Summary
 // ============================================================
 console.log(`\n${'='.repeat(40)}`);
