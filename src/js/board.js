@@ -120,7 +120,7 @@ const Board = (() => {
   function drawLastMove() {
     if (!lastPlaced) return;
     const { x, y } = toPixel(lastPlaced.r, lastPlaced.c);
-    ctx.fillStyle = 'rgba(255, 200, 0, 0.5)';
+    ctx.fillStyle = 'rgba(100, 180, 255, 0.5)';
     ctx.beginPath(); ctx.arc(x, y, PIECE_R + 6, 0, Math.PI * 2); ctx.fill();
   }
 
