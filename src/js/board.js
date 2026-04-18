@@ -308,14 +308,14 @@ const Board = (() => {
         render(); updateStatus();
         setTimeout(() => { pinchAnim = null; render(); }, 800);
         if (result.gameOver) { clearTimer(); return showWinner(); }
-        if (!result.more) { clearTimer(); scheduleAI(); }
+        if (!result.more) { clearTimer(); continueGame(); }
       }
     } else if (game.state === Game.STATE_WAIT_SACRIFICE) {
       const result = Game.sacrifice(game, r, c);
       if (result) {
         render(); updateStatus();
         if (result.gameOver) return showWinner();
-        scheduleAI();
+        continueGame();
       }
     }
   }
@@ -341,7 +341,7 @@ const Board = (() => {
     } else if (game.state === Game.STATE_WAIT_SACRIFICE) {
       showSacrificeOverlay();
     } else {
-      scheduleAI();
+      continueGame();
     }
   }
 
@@ -360,7 +360,7 @@ const Board = (() => {
         clearTimer();
         Game.expireClaim(game);
         render(); updateStatus();
-        scheduleAI();
+        continueGame();
       }
     }, tick);
   }
@@ -384,6 +384,15 @@ const Board = (() => {
   function claimPinch() {} // kept for compatibility
 
   // ===================== AI =====================
+  function continueGame() {
+    if (game.phase === Game.PHASE_OVER) return showWinner();
+    if (game.state === Game.STATE_WAIT_SACRIFICE) {
+      showSacrificeOverlay();
+      return;
+    }
+    scheduleAI();
+  }
+
   function scheduleAI() {
     if (!aiEngine || game.turn !== aiColor || game.phase === Game.PHASE_OVER) return;
     setTimeout(doAITurn, 600);
@@ -397,7 +406,7 @@ const Board = (() => {
         const result = Game.sacrifice(game, t[0], t[1]);
         render(); updateStatus();
         if (result && result.gameOver) return showWinner();
-        scheduleAI();
+        continueGame();
       }
       return;
     }
@@ -444,7 +453,7 @@ const Board = (() => {
         render(); updateStatus();
         if (result && result.gameOver) return showWinner();
         if (result && result.more) { setTimeout(doAIPinch, 500); return; }
-        setTimeout(() => scheduleAI(), 500);
+        setTimeout(() => continueGame(), 500);
       }, 1000);
     }, 1000);
   }
@@ -540,7 +549,7 @@ const Board = (() => {
 
   function showSacrificeOverlay() {
     const el = document.getElementById('phase-overlay');
-    if (!el) return scheduleAI();
+    if (!el) { scheduleAI(); return; }
     const name = game.turn === 'B' ? '黑方' : '白方';
     const icon = game.turn === 'B' ? '⚫' : '⚪';
     el.innerHTML = `<div class="phase-title">🚫 ${icon} ${name}无路可走</div><div class="phase-sub">必须献祭一颗己方棋子</div>`;
@@ -553,12 +562,12 @@ const Board = (() => {
 
   function showPhaseOverlay() {
     const el = document.getElementById('phase-overlay');
-    if (!el) return scheduleAI();
+    if (!el) { continueGame(); return; }
     el.innerHTML = '<div class="phase-title">⚔️ 走子阶段</div><div class="phase-sub">移除死子，轮流移动棋子</div>';
     el.classList.add('show');
     setTimeout(() => {
       el.classList.remove('show');
-      scheduleAI();
+      continueGame();
     }, 2000);
   }
 
