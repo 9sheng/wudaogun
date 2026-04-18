@@ -13,6 +13,7 @@ const Board = (() => {
   let firstPlayer = 'B';
   let lastPlaced = null;
   let pinchAnim = null; // {r, c, phase} for pinch animation
+  let blindTimer = false; // true when showing blind-mode countdown (no formation)
 
   function init(canvasEl) {
     canvas = canvasEl;
@@ -310,6 +311,7 @@ const Board = (() => {
     Sound.unlock();
     if (game.phase === Game.PHASE_OVER) return;
     if (aiEngine && game.turn === aiColor) return;
+    if (blindTimer) return;
 
     const rect = canvas.getBoundingClientRect();
     const scale = canvas.width / rect.width;
@@ -358,8 +360,15 @@ const Board = (() => {
     updateStatus();
     if (game.phase === Game.PHASE_OVER) return showWinner();
 
-    if (result.newFormations && result.newFormations.length > 0) {
-      if (showHints) sfx('formation');
+    if (!showHints) {
+      // Blind mode: always show 10s timer, player can try to pinch
+      if (result.newFormations && result.newFormations.length > 0) {
+        startPinchTimer();
+      } else {
+        startBlindTimer();
+      }
+    } else if (result.newFormations && result.newFormations.length > 0) {
+      sfx('formation');
       startPinchTimer();
     } else {
       continueGame();
@@ -387,9 +396,28 @@ const Board = (() => {
     }, tick);
   }
 
+  function startBlindTimer() {
+    if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
+    blindTimer = true;
+    claimTimeTotal = 10000;
+    claimTimeLeft = 10000;
+    updateStatus();
+    updateTimerBar();
+    const tick = 50;
+    claimTimer = setInterval(() => {
+      claimTimeLeft -= tick;
+      updateTimerBar();
+      if (claimTimeLeft <= 0) {
+        clearTimer();
+        continueGame();
+      }
+    }, tick);
+  }
+
   function clearTimer() {
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
     claimTimeLeft = 0;
+    blindTimer = false;
     timerPaused = false;
     updateTimerBar();
   }
@@ -522,7 +550,9 @@ const Board = (() => {
     const turnName = game.turn === 'B' ? '黑方' : '白方';
 
     let msg = '';
-    switch (game.state) {
+    if (blindTimer) {
+      msg = '结束本轮，换手';
+    } else switch (game.state) {
       case Game.STATE_WAIT_ACTION:
         msg = game.phase === Game.PHASE_PLACE ? '请落子' : '选择棋子移动';
         break;
@@ -538,7 +568,7 @@ const Board = (() => {
     // Claim button - shows during pinch selection as status indicator
     const btn = document.getElementById('btn-claim');
     if (btn) {
-      const show = game.state === Game.STATE_WAIT_PINCH_SELECT;
+      const show = game.state === Game.STATE_WAIT_PINCH_SELECT || blindTimer;
       btn.style.display = show ? 'flex' : 'none';
       btn.classList.toggle('active', show);
       const txt = btn.querySelector('.claim-text');
