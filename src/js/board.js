@@ -8,7 +8,8 @@ const Board = (() => {
   let selected = null;
   let claimTimer = null, claimTimeLeft = 0;
   let showHints = true;
-  let lastPlaced = null; // highlight last move
+  let multiPinch = false;
+  let lastPlaced = null;
 
   function init(canvasEl) {
     canvas = canvasEl;
@@ -36,6 +37,7 @@ const Board = (() => {
   }
 
   function setHints(on) { showHints = on; render(); }
+  function setMultiPinch(on) { multiPinch = on; }
 
   function toBoard(px, py) {
     const r = Math.round((py - MARGIN) / CELL);
@@ -276,6 +278,7 @@ const Board = (() => {
   }
 
   function afterAction(result) {
+    if (!multiPinch && game.pinchesRemaining > 1) game.pinchesRemaining = 1;
     render();
     updateStatus();
     if (game.phase === Game.PHASE_OVER) return showWinner();
@@ -354,6 +357,7 @@ const Board = (() => {
     }
 
     if (result) {
+      if (!multiPinch && game.pinchesRemaining > 1) game.pinchesRemaining = 1;
       render();
       if (result.newFormations && result.newFormations.length > 0) {
         updateStatus();
@@ -452,5 +456,5 @@ const Board = (() => {
     }
   }
 
-  return { init, newGame, setAI, setHints, claimPinch, pauseTimer, undoMove, render };
+  return { init, newGame, setAI, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, render };
 })();
