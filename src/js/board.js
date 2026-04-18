@@ -426,6 +426,7 @@ const Board = (() => {
         return;
       }
       updateStatus();
+      continueGame();
     }
   }
 
