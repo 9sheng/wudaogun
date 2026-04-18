@@ -412,12 +412,16 @@ const Board = (() => {
       `<span class="turn-indicator ${game.turn === 'B' ? 'turn-black' : 'turn-white'}">${turnIcon} ${turnName}</span> ` +
       `<span class="status-msg">${msg}</span>`;
 
-    // Claim button
+    // Claim button - visible during claim window AND pinch selection
     const btn = document.getElementById('btn-claim');
     if (btn) {
-      const show = game.state === Game.STATE_WAIT_PINCH_CLAIM;
+      const showClaim = game.state === Game.STATE_WAIT_PINCH_CLAIM;
+      const showSelect = game.state === Game.STATE_WAIT_PINCH_SELECT;
+      const show = showClaim || showSelect;
       btn.style.display = show ? 'flex' : 'none';
       btn.classList.toggle('active', show);
+      const txt = btn.querySelector('.claim-text');
+      if (txt) txt.textContent = showSelect ? `🎯 请选择要掐的棋子 (${game.pinchesRemaining})` : '✋ 我要掐子！';
     }
 
     // Piece counts

@@ -113,8 +113,8 @@ body {
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  background: rgba(231,76,60,0.15);
-  border: 2px solid rgba(231,76,60,0.4);
+  background: rgba(46,204,113,0.15);
+  border: 2px solid rgba(46,204,113,0.4);
   color: #fff;
   transition: transform 0.1s;
 }
@@ -123,7 +123,7 @@ body {
   top: 0; left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
   border-radius: 10px;
   transition: width 50ms linear;
   z-index: 0;
@@ -142,8 +142,8 @@ body {
 #btn-claim:hover { transform: scale(1.02); }
 #btn-claim:active { transform: scale(0.98); }
 @keyframes claimPulse {
-  from { box-shadow: 0 4px 16px rgba(231,76,60,0.3); }
-  to { box-shadow: 0 4px 28px rgba(231,76,60,0.6), 0 0 40px rgba(231,76,60,0.15); }
+  from { box-shadow: 0 4px 16px rgba(46,204,113,0.3); }
+  to { box-shadow: 0 4px 28px rgba(46,204,113,0.6), 0 0 40px rgba(46,204,113,0.15); }
 }
 
 /* Canvas */
