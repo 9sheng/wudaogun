@@ -11,6 +11,7 @@ const Board = (() => {
   let multiPinch = false;
   let firstPlayer = 'B';
   let lastPlaced = null;
+  let pinchAnim = null; // {r, c, phase} for pinch animation
 
   function init(canvasEl) {
     canvas = canvasEl;
@@ -25,6 +26,7 @@ const Board = (() => {
     clearTimer();
     selected = null;
     lastPlaced = null;
+    pinchAnim = null;
     game = Game.create();
     game.turn = firstPlayer;
     lastPhase = Game.PHASE_PLACE;
@@ -70,8 +72,42 @@ const Board = (() => {
     drawLastMove();
     drawFormationHighlights();
     drawPieces();
+    drawPinchAnim();
     drawSelection();
     if (game.state === Game.STATE_WAIT_PINCH_SELECT) drawPinchTargets();
+  }
+
+  function drawPinchAnim() {
+    if (!pinchAnim) return;
+    const { x, y } = toPixel(pinchAnim.r, pinchAnim.c);
+    if (pinchAnim.phase === 'target') {
+      // Pulsing red crosshair on target
+      ctx.strokeStyle = '#ff3333';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 16, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,50,50,0.4)'; ctx.lineWidth = 6; ctx.stroke();
+      // Crosshair lines
+      ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 2;
+      for (const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+        ctx.beginPath();
+        ctx.moveTo(x + dx * (PIECE_R + 4), y + dy * (PIECE_R + 4));
+        ctx.lineTo(x + dx * (PIECE_R + 20), y + dy * (PIECE_R + 20));
+        ctx.stroke();
+      }
+    } else if (pinchAnim.phase === 'removed') {
+      // Expanding red ring where piece was removed
+      ctx.strokeStyle = 'rgba(255,50,50,0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 12, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,50,50,0.15)';
+      ctx.beginPath(); ctx.arc(x, y, PIECE_R + 12, 0, Math.PI * 2); ctx.fill();
+      // X mark
+      ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x-14, y-14); ctx.lineTo(x+14, y+14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+14, y-14); ctx.lineTo(x-14, y+14); ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
   }
 
   function drawBoard() {
@@ -268,7 +304,9 @@ const Board = (() => {
     } else if (game.state === Game.STATE_WAIT_PINCH_SELECT) {
       const result = Game.pinch(game, r, c);
       if (result) {
+        pinchAnim = { r, c, phase: 'removed' };
         render(); updateStatus();
+        setTimeout(() => { pinchAnim = null; render(); }, 800);
         if (result.gameOver) { clearTimer(); return showWinner(); }
         if (!result.more) { clearTimer(); scheduleAI(); }
       }
@@ -387,14 +425,26 @@ const Board = (() => {
   function doAIPinch() {
     if (game.state !== Game.STATE_WAIT_PINCH_SELECT) return;
     const t = aiEngine.choosePinch(game);
-    if (t) {
+    if (!t) { scheduleAI(); return; }
+
+    // Phase 1: show crosshair on target for 1s
+    pinchAnim = { r: t[0], c: t[1], phase: 'target' };
+    render(); updateStatus();
+
+    setTimeout(() => {
+      // Phase 2: execute pinch
       const result = Game.pinch(game, t[0], t[1]);
+      pinchAnim = { r: t[0], c: t[1], phase: 'removed' };
       render(); updateStatus();
-      if (result && result.gameOver) return setTimeout(showWinner, 1000);
-      if (result && result.more) { setTimeout(doAIPinch, 1500); return; }
-    }
-    // Pause after pinch so user can see the effect
-    setTimeout(() => scheduleAI(), 1000);
+
+      setTimeout(() => {
+        pinchAnim = null;
+        render(); updateStatus();
+        if (result && result.gameOver) return showWinner();
+        if (result && result.more) { setTimeout(doAIPinch, 500); return; }
+        setTimeout(() => scheduleAI(), 500);
+      }, 1000);
+    }, 1000);
   }
 
   // ===================== UI updates =====================
