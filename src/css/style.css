@@ -177,6 +177,31 @@ canvas {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Phase transition overlay */
+#phase-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(100,180,255,0.6), 0 4px 12px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+#phase-overlay.show { display: flex; animation: phaseFadeIn 0.5s ease-out; }
+#phase-overlay .phase-title { font-size: 2.8em; }
+#phase-overlay .phase-sub { font-size: 1em; color: #a0c4ff; font-weight: 400; }
+@keyframes phaseFadeIn {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
 /* Controls */
 .controls {
   display: flex;

@@ -27,6 +27,7 @@ const Board = (() => {
     lastPlaced = null;
     game = Game.create();
     game.turn = firstPlayer;
+    lastPhase = Game.PHASE_PLACE;
     if (aiEngine) aiColor = firstPlayer === 'B' ? 'W' : 'B';
     const overlay = document.getElementById('winner-overlay');
     if (overlay) overlay.classList.remove('show');
@@ -281,11 +282,22 @@ const Board = (() => {
     }
   }
 
+  let lastPhase = Game.PHASE_PLACE;
+
   function afterAction(result) {
     if (!multiPinch && game.pinchesRemaining > 1) game.pinchesRemaining = 1;
     render();
     updateStatus();
     if (game.phase === Game.PHASE_OVER) return showWinner();
+
+    // Phase transition overlay
+    if (lastPhase === Game.PHASE_PLACE && game.phase === Game.PHASE_MOVE) {
+      lastPhase = game.phase;
+      showPhaseOverlay();
+      return;
+    }
+    lastPhase = game.phase;
+
     if (result.newFormations && result.newFormations.length > 0) {
       startPinchTimer();
     } else {
@@ -464,6 +476,17 @@ const Board = (() => {
     const fill = document.getElementById('timer-fill');
     if (!fill) return;
     fill.style.width = Math.max(0, claimTimeLeft / 10000 * 100) + '%';
+  }
+
+  function showPhaseOverlay() {
+    const el = document.getElementById('phase-overlay');
+    if (!el) return scheduleAI();
+    el.innerHTML = '<div class="phase-title">⚔️ 走子阶段</div><div class="phase-sub">移除死子，轮流移动棋子</div>';
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show');
+      scheduleAI();
+    }, 2000);
   }
 
   function showWinner() {
