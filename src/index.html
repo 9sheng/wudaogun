@@ -39,7 +39,10 @@
 
     <canvas id="board"></canvas>
 
-    <button id="btn-claim" onclick="Board.claimPinch()">✋ 我要掐子！</button>
+    <button id="btn-claim" onclick="Board.claimPinch()">
+      <div id="timer-fill"></div>
+      <span class="claim-text">✋ 我要掐子！</span>
+    </button>
 
     <div class="controls">
       <button onclick="Board.undoMove()">↩ 悔棋</button>
