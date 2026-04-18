@@ -46,6 +46,7 @@
 
     <div class="controls">
       <button onclick="Board.undoMove()">↩ 悔棋</button>
+      <button onclick="Board.surrender()">🏳 认输</button>
       <button onclick="Board.newGame()">🔄 新局</button>
       <select id="ai-select" onchange="Board.setAI(this.value)">
         <option value="">👥 双人对战</option>

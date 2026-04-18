@@ -589,5 +589,15 @@ const Board = (() => {
     }
   }
 
-  return { init, newGame, setAI, setFirst, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, render };
+  function surrender() {
+    if (game.phase === Game.PHASE_OVER) return;
+    const human = aiEngine ? (aiColor === 'B' ? 'W' : 'B') : game.turn;
+    game.winner = human === 'B' ? 'W' : 'B';
+    game.phase = Game.PHASE_OVER;
+    game.state = 'over';
+    clearTimer();
+    showWinner();
+  }
+
+  return { init, newGame, setAI, setFirst, setHints, setMultiPinch, claimPinch, pauseTimer, undoMove, surrender, render };
 })();
