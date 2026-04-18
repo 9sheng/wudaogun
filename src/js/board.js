@@ -23,6 +23,8 @@ const Board = (() => {
     selected = null;
     lastPlaced = null;
     game = Game.create();
+    const overlay = document.getElementById('winner-overlay');
+    if (overlay) overlay.classList.remove('show');
     render();
     updateStatus();
   }
@@ -429,7 +431,16 @@ const Board = (() => {
     fill.style.width = Math.max(0, claimTimeLeft / 10000 * 100) + '%';
   }
 
-  function showWinner() { render(); updateStatus(); }
+  function showWinner() {
+    render(); updateStatus();
+    const overlay = document.getElementById('winner-overlay');
+    if (overlay && game.winner) {
+      const icon = game.winner === 'B' ? '⚫' : '⚪';
+      const name = game.winner === 'B' ? '黑方' : '白方';
+      overlay.textContent = `🏆 ${icon} ${name}获胜！`;
+      overlay.classList.add('show');
+    }
+  }
 
   function undoMove() {
     clearTimer();
