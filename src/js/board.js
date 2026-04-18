@@ -426,7 +426,7 @@ const Board = (() => {
       if (txt) {
         const fname = formationNames(game.newFormations);
         if (timerPaused) txt.textContent = `⏸ ${fname}，请选择要掐的棋子 (${game.pinchesRemaining})`;
-        else txt.textContent = `🎯 ${fname}，点我暂停，或直接掐子 (${game.pinchesRemaining})`;
+        else txt.textContent = `🎯 ${fname}，点我暂停计时，或直接掐子 (${game.pinchesRemaining})`;
       }
     }
 
