@@ -365,7 +365,7 @@ const Board = (() => {
       render();
       if (result.newFormations && result.newFormations.length > 0) {
         updateStatus();
-        setTimeout(doAIPinch, 1500);
+        setTimeout(doAIPinch, 2000);
         return;
       }
       updateStatus();
@@ -378,12 +378,11 @@ const Board = (() => {
     if (t) {
       const result = Game.pinch(game, t[0], t[1]);
       render(); updateStatus();
-      if (result && result.gameOver) return showWinner();
-      if (result && result.more) { setTimeout(doAIPinch, 800); return; }
+      if (result && result.gameOver) return setTimeout(showWinner, 1000);
+      if (result && result.more) { setTimeout(doAIPinch, 1500); return; }
     }
-    // Pinch done or no target — if turn switched to human, nothing to do
-    // If still AI turn (shouldn't happen), schedule next
-    scheduleAI();
+    // Pause after pinch so user can see the effect
+    setTimeout(() => scheduleAI(), 1000);
   }
 
   // ===================== UI updates =====================
