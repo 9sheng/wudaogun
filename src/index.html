@@ -8,27 +8,59 @@
 </head>
 <body>
   <div class="container">
-    <h1>五阶精策棋 <span>5×5 Strategy Game</span></h1>
-    <div id="piece-count">⚫ 0 | ⚪ 0</div>
-    <div id="status">下子阶段 | ⚫ 黑方 | 请落子</div>
-    <div class="timer-wrap"><div id="timer-bar"></div></div>
-    <canvas id="board"></canvas>
-    <div class="controls">
-      <button id="btn-claim" onclick="Board.claimPinch()">我要掐子!</button>
-      <button onclick="Board.undoMove()">悔棋</button>
-      <button onclick="Board.newGame()">新局</button>
-      <select id="ai-select" onchange="Board.setAI(this.value)">
-        <option value="">双人对战</option>
-        <option value="random">AI: 随机</option>
-        <option value="greedy">AI: 贪心</option>
-        <option value="minimax">AI: 极小极大</option>
-        <option value="mcts">AI: 蒙特卡洛</option>
-      </select>
-      <label><input type="checkbox" checked onchange="Board.setHints(this.checked)"> 成形提示</label>
+    <div class="header">
+      <h1>五阶精策棋</h1>
+      <div class="subtitle">5×5 Strategy Board Game</div>
     </div>
-    <div class="info">
-      <b>规则：</b>下子阶段交替落子填满25格。成形（3/4/5斜、大棍、方）后5秒内点"我要掐子"可标记对方一子死亡。
-      走子阶段移除死子，轮流移动至相邻空位，成形立即提子。无路可走须献祭一子。对方全灭即胜。
+
+    <div class="score-panel">
+      <div class="score-side">
+        <span class="piece-icon black"></span>
+        <span>黑</span>
+        <span class="count" id="count-b">0</span>
+      </div>
+      <div class="score-divider">
+        <span class="move-info" id="move-count">0/25</span>
+      </div>
+      <div class="score-side">
+        <span class="count" id="count-w">0</span>
+        <span>白</span>
+        <span class="piece-icon white"></span>
+      </div>
+    </div>
+
+    <div id="status">
+      <span class="phase-tag">下子阶段</span>
+      <span class="turn-indicator turn-black">● 黑方</span>
+      <span class="status-msg">请落子</span>
+    </div>
+
+    <div id="timer-bar"><div id="timer-fill"></div></div>
+
+    <canvas id="board"></canvas>
+
+    <button id="btn-claim" onclick="Board.claimPinch()">✋ 我要掐子！</button>
+
+    <div class="controls">
+      <button onclick="Board.undoMove()">↩ 悔棋</button>
+      <button onclick="Board.newGame()">🔄 新局</button>
+      <select id="ai-select" onchange="Board.setAI(this.value)">
+        <option value="">👥 双人对战</option>
+        <option value="random">🤖 AI: 随机</option>
+        <option value="greedy">🤖 AI: 贪心</option>
+        <option value="minimax">🤖 AI: 极小极大</option>
+        <option value="mcts">🤖 AI: 蒙特卡洛</option>
+      </select>
+    </div>
+
+    <div class="toggle-row">
+      <input type="checkbox" id="hints-toggle" checked onchange="Board.setHints(this.checked)">
+      <label for="hints-toggle">显示成形提示</label>
+    </div>
+
+    <div class="rules">
+      <b>规则简述：</b>交替落子填满25格，成形（3/4/5斜·大棍·方）后5秒内点"掐子"可标记对方一子死亡。
+      满格后移除死子进入走子阶段，轮流移动至相邻空位，成形立即提子。无路可走须献祭一子。全灭即胜。
     </div>
   </div>
 
