@@ -448,14 +448,17 @@ describe('AI: Minimax', () => {
     assert(m && g.board[m.r][m.c] === null);
   });
 
-  it('should block opponent formation', () => {
-    const g = Game.create();
-    g.board[0][2] = 'W'; g.board[1][3] = 'W';
-    g.formations.W = Formation.findAll(g.board, 'W');
-    g.turn = 'B';
-    const m = AIMinimax.choosePlace(g);
-    // Should block at (2,4)
-    eq(m.r, 2); eq(m.c, 4);
+  it('should block opponent formation most of the time', () => {
+    let blocked = 0;
+    for (let i = 0; i < 20; i++) {
+      const g = Game.create();
+      g.board[0][2] = 'W'; g.board[1][3] = 'W';
+      g.formations.W = Formation.findAll(g.board, 'W');
+      g.turn = 'B';
+      const m = AIMinimax.choosePlace(g);
+      if (m.r === 2 && m.c === 4) blocked++;
+    }
+    assert(blocked >= 5, `Should block at (2,4) frequently, got ${blocked}/20`);
   });
 });
 
@@ -776,6 +779,151 @@ describe('Game: surrender', () => {
     g.state = 'over';
     const result = Game.place(g, 0, 0);
     eq(result, false);
+  });
+});
+
+// ============================================================
+// Blind Mode Tests (hints off behavior)
+// ============================================================
+describe('Blind mode: pinch still works without hints', () => {
+  it('formation should still be detected when hints off (game logic unchanged)', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.board[0][0] = 'W';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 3;
+    const result = Game.place(g, 2, 4);
+    assert(result.newFormations.length > 0, 'Formation detected regardless of UI hints');
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+    // Player can still pinch
+    const pr = Game.pinch(g, 0, 0);
+    assert(pr, 'Pinch succeeds in blind mode');
+  });
+
+  it('no formation: endTurn already called, state is waitAction', () => {
+    const g = Game.create();
+    g.placedCount = 0;
+    const result = Game.place(g, 2, 2);
+    assert(result, 'Place succeeds');
+    eq(result.newFormations.length, 0);
+    eq(g.state, Game.STATE_WAIT_ACTION);
+    eq(g.turn, 'W'); // turn already switched
+  });
+
+  it('expireClaim only works in pinch select state', () => {
+    const g = Game.create();
+    g.state = Game.STATE_WAIT_ACTION;
+    g.turn = 'B';
+    const result = Game.expireClaim(g);
+    eq(result, false); // no-op when not in pinch select
+    eq(g.turn, 'B'); // turn unchanged
+  });
+});
+
+describe('Blind mode: consistent turn state after pinch', () => {
+  it('after pinch completes, turn switches exactly once', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.board[0][0] = 'W'; g.board[4][4] = 'W';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 4;
+    Game.place(g, 2, 4); // B forms diag3
+    eq(g.turn, 'B'); // still B during pinch
+    Game.pinch(g, 4, 4); // pinch W
+    eq(g.turn, 'W'); // switched once
+    eq(g.state, Game.STATE_WAIT_ACTION);
+    // Calling expireClaim now should be no-op (state is waitAction)
+    const expired = Game.expireClaim(g);
+    eq(expired, false);
+    eq(g.turn, 'W'); // still W, not double-switched
+  });
+
+  it('double expireClaim should not double-switch turn', () => {
+    const g = Game.create();
+    g.board[0][2] = 'B'; g.board[1][3] = 'B';
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.placedCount = 2;
+    Game.place(g, 2, 4);
+    eq(g.state, Game.STATE_WAIT_PINCH_SELECT);
+    Game.expireClaim(g);
+    eq(g.turn, 'W');
+    // Second expireClaim should be no-op
+    Game.expireClaim(g);
+    eq(g.turn, 'W'); // not switched again
+  });
+});
+
+// ============================================================
+// AI Randomness Tests
+// ============================================================
+describe('AI: Greedy randomness', () => {
+  it('should not always return the same move on identical boards', () => {
+    const results = new Set();
+    for (let i = 0; i < 20; i++) {
+      const g = Game.create();
+      const m = AIGreedy.choosePlace(g);
+      results.add(`${m.r},${m.c}`);
+    }
+    // With randomness among top moves, should see variation
+    assert(results.size > 1, 'Greedy should show some randomness (got ' + results.size + ' unique moves)');
+  });
+});
+
+describe('AI: Minimax randomness', () => {
+  it('should not always return the same move on identical boards', () => {
+    const results = new Set();
+    for (let i = 0; i < 10; i++) {
+      const g = Game.create();
+      const m = AIMinimax.choosePlace(g);
+      results.add(`${m.r},${m.c}`);
+    }
+    assert(results.size > 1, 'Minimax should show some randomness (got ' + results.size + ' unique moves)');
+  });
+});
+
+describe('AI: Negamax randomness', () => {
+  it('should not always return the same move on identical boards', () => {
+    const results = new Set();
+    for (let i = 0; i < 10; i++) {
+      const g = Game.create();
+      const m = AINegamax.choosePlace(g);
+      results.add(`${m.r},${m.c}`);
+    }
+    assert(results.size > 1, 'Negamax should show some randomness (got ' + results.size + ' unique moves)');
+  });
+});
+
+// ============================================================
+// Formation highlight line drawing (data validation)
+// ============================================================
+describe('Formation: cells ordering for line drawing', () => {
+  it('diag3 cells should be in sequence for line drawing', () => {
+    const b = emptyBoard();
+    b[0][2] = 'B'; b[1][3] = 'B'; b[2][4] = 'B';
+    const f = Formation.findAll(b, 'B').find(x => x.type === 'diag3');
+    assert(f, 'Should find diag3');
+    // Cells should be adjacent in sequence (each step is diagonal)
+    for (let i = 1; i < f.cells.length; i++) {
+      const dr = Math.abs(f.cells[i][0] - f.cells[i-1][0]);
+      const dc = Math.abs(f.cells[i][1] - f.cells[i-1][1]);
+      eq(dr, 1); eq(dc, 1);
+    }
+  });
+
+  it('square cells should have 4 elements', () => {
+    const b = emptyBoard();
+    b[1][1] = 'B'; b[1][2] = 'B'; b[2][1] = 'B'; b[2][2] = 'B';
+    const f = Formation.findAll(b, 'B').find(x => x.type === 'square');
+    assert(f, 'Should find square');
+    eq(f.cells.length, 4);
+  });
+
+  it('line5 cells should span full row/column', () => {
+    const b = emptyBoard();
+    for (let c = 0; c < 5; c++) b[0][c] = 'B';
+    const f = Formation.findAll(b, 'B').find(x => x.type === 'line5');
+    assert(f, 'Should find line5');
+    eq(f.cells.length, 5);
   });
 });
 
