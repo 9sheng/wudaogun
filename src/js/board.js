@@ -655,11 +655,14 @@ const Board = (() => {
 
   function showPhaseOverlay() {
     const el = document.getElementById('phase-overlay');
-    if (!el) { continueGame(); return; }
+    if (!el) { Game.removeDeadPieces(game); render(); continueGame(); return; }
     el.innerHTML = '<div class="phase-title">⚔️ 走子阶段</div><div class="phase-sub">移除死子，轮流移动棋子</div>';
     el.classList.add('show');
     setTimeout(() => {
       el.classList.remove('show');
+      Game.removeDeadPieces(game);
+      render(); updateStatus();
+      if (game.phase === Game.PHASE_OVER) { showWinner(); return; }
       continueGame();
     }, 2000);
   }

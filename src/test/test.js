@@ -631,7 +631,10 @@ describe('Regression: win at phase transition (all pieces dead)', () => {
     Game.place(g, 4, 4);
     // If formation detected, expire it to trigger phase transition
     if (g.state === Game.STATE_WAIT_PINCH_SELECT) Game.expireClaim(g);
-    // After transition, all DW removed → W has 0 pieces → B wins
+    // Now in PHASE_MOVE, dead pieces still on board (UI shows overlay first)
+    eq(g.phase, Game.PHASE_MOVE);
+    // After overlay, removeDeadPieces is called
+    Game.removeDeadPieces(g);
     eq(g.phase, Game.PHASE_OVER);
     eq(g.winner, 'B');
   });

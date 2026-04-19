@@ -201,10 +201,20 @@ const Game = (() => {
   }
 
   function transitionToPhase2(g) {
-    // Remove all dead pieces
+    g.phase = PHASE_MOVE;
+    // Dead pieces stay on board until UI removes them after overlay
+    g.formations.B = Formation.findAll(g.board, 'B');
+    g.formations.W = Formation.findAll(g.board, 'W');
+    if (!hasLegalMoves(g, g.turn)) {
+      g.state = STATE_WAIT_SACRIFICE;
+    } else {
+      g.state = STATE_WAIT_ACTION;
+    }
+  }
+
+  function removeDeadPieces(g) {
     for (const d of g.deadPieces) g.board[d.r][d.c] = null;
     g.deadPieces = [];
-    g.phase = PHASE_MOVE;
     if (checkWin(g)) return;
     g.formations.B = Formation.findAll(g.board, 'B');
     g.formations.W = Formation.findAll(g.board, 'W');
@@ -273,7 +283,7 @@ const Game = (() => {
 
   return {
     create, clone, place, move, claimPinch, expireClaim, pinch, sacrifice,
-    undo, getLegalMoves, hasLegalMoves, pieceCount, isAdjacent, checkWin,
+    undo, getLegalMoves, hasLegalMoves, pieceCount, isAdjacent, checkWin, removeDeadPieces,
     PHASE_PLACE, PHASE_MOVE, PHASE_OVER,
     STATE_WAIT_ACTION, STATE_WAIT_PINCH_CLAIM, STATE_WAIT_PINCH_SELECT, STATE_WAIT_SACRIFICE,
     SIZE,
