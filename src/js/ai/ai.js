@@ -12,11 +12,11 @@ const AI = (() => {
 
   function list() {
     return [
-      { id: 'random',  name: '随机 (Random)',  desc: 'Beginner' },
-      { id: 'greedy',  name: '贪心 (Greedy)',   desc: 'Intermediate' },
-      { id: 'minimax', name: '极小极大 (Minimax)', desc: 'Advanced' },
-      { id: 'mcts',    name: '蒙特卡洛 (MCTS)',  desc: 'Expert' },
-      { id: 'negamax', name: '深度搜索 (Negamax)', desc: 'Master' },
+      { id: 'random',  name: '初级',  desc: 'Beginner' },
+      { id: 'greedy',  name: '中级',   desc: 'Intermediate' },
+      { id: 'minimax', name: '高级', desc: 'Advanced' },
+      { id: 'mcts',    name: '专家',  desc: 'Expert' },
+      { id: 'negamax', name: '大师', desc: 'Master' },
     ];
   }
 

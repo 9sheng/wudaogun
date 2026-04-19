@@ -50,11 +50,11 @@
       <button onclick="Board.newGame()">🔄 新局</button>
       <select id="ai-select" onchange="Board.setAI(this.value)">
         <option value="">👥 双人对战</option>
-        <option value="random">🤖 AI: 随机</option>
-        <option value="greedy" selected>🤖 AI: 贪心</option>
-        <option value="minimax">🤖 AI: 极小极大</option>
-        <option value="mcts">🤖 AI: 蒙特卡洛</option>
-        <option value="negamax">🤖 AI: 深度搜索</option>
+        <option value="random">🤖 初级</option>
+        <option value="greedy" selected>🤖 中级</option>
+        <option value="minimax">🤖 高级</option>
+        <option value="mcts">🤖 专家</option>
+        <option value="negamax">🤖 大师</option>
       </select>
       <select id="first-select" onchange="Board.setFirst(this.value)">
         <option value="B">⚫ 黑先</option>
@@ -74,7 +74,7 @@
       满格后移除死子进入走子阶段，轮流移动至相邻空位，成形立即提子。无路可走须献祭一子。全灭即胜。
     </div>
 
-    <div class="update-time">最近更新: 2026-04-19T01:02:59Z</div>
+    <div class="update-time">最近更新: 2026-04-19T02:28:16Z</div>
   </div>
 
   <script src="src/js/formation.js"></script>
