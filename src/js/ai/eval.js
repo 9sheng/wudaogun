@@ -116,5 +116,34 @@ const AIEval = (() => {
     return score;
   }
 
-  return { evaluate, countThreats, opp };
+  // Simulate pinch after a move: detect new formations, greedily remove best opponent targets
+  // prevFormations: formations of `color` BEFORE the move was applied
+  // Mutates board in-place. Returns number of pinches applied.
+  function simulatePinch(board, color, phase, prevFormations) {
+    const o = opp(color);
+    const newF = Formation.findNew(board, color, prevFormations);
+    if (newF.length === 0) return 0;
+    for (let i = 0; i < newF.length; i++) {
+      const targets = Formation.pinchTargets(board, o);
+      if (targets.length === 0) break;
+      // Greedy: pick target that maximizes eval for color
+      let best = 0;
+      if (targets.length > 1) {
+        let bestScore = -Infinity;
+        for (let t = 0; t < targets.length; t++) {
+          const [r, c] = targets[t];
+          const saved = board[r][c];
+          board[r][c] = phase === 1 ? 'D' + o : null;
+          const s = evaluate(board, color, phase);
+          board[r][c] = saved;
+          if (s > bestScore) { bestScore = s; best = t; }
+        }
+      }
+      const [r, c] = targets[best];
+      board[r][c] = phase === 1 ? 'D' + o : null;
+    }
+    return newF.length;
+  }
+
+  return { evaluate, countThreats, opp, simulatePinch };
 })();

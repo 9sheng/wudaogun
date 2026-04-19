@@ -5,11 +5,36 @@ const AINegamax = (() => {
   let deadline = 0;
   let aborted = false;
 
-  function applyMove(board, m, color) {
+  function applyMove(board, m, color, phase) {
+    const prevF = Formation.findAll(board, color);
     if (m.r !== undefined) board[m.r][m.c] = color;
     else { board[m.fr][m.fc] = null; board[m.tr][m.tc] = color; }
+    const newF = Formation.findNew(board, color, prevF);
+    const pinched = [];
+    const o = opp(color);
+    for (let i = 0; i < newF.length; i++) {
+      const targets = Formation.pinchTargets(board, o);
+      if (targets.length === 0) break;
+      let best = 0;
+      if (targets.length > 1) {
+        let bs = -Infinity;
+        for (let t = 0; t < targets.length; t++) {
+          const [r, c] = targets[t];
+          const sv = board[r][c];
+          board[r][c] = phase === Game.PHASE_PLACE ? 'D' + o : null;
+          const s = AIEval.evaluate(board, color, phase);
+          board[r][c] = sv;
+          if (s > bs) { bs = s; best = t; }
+        }
+      }
+      const [r, c] = targets[best];
+      pinched.push({ r, c, was: board[r][c] });
+      board[r][c] = phase === Game.PHASE_PLACE ? 'D' + o : null;
+    }
+    return pinched;
   }
-  function undoMove(board, m, color) {
+  function undoMove(board, m, color, pinched) {
+    for (let i = pinched.length - 1; i >= 0; i--) board[pinched[i].r][pinched[i].c] = pinched[i].was;
     if (m.r !== undefined) board[m.r][m.c] = null;
     else { board[m.fr][m.fc] = color; board[m.tr][m.tc] = null; }
   }
@@ -25,9 +50,9 @@ const AINegamax = (() => {
 
     let bestVal = -Infinity;
     for (const m of moves) {
-      applyMove(board, m, color);
+      const p = applyMove(board, m, color, phase);
       const val = -negamax(board, depth - 1, -beta, -alpha, opp(color), phase);
-      undoMove(board, m, color);
+      undoMove(board, m, color, p);
       if (aborted) return 0;
       bestVal = Math.max(bestVal, val);
       alpha = Math.max(alpha, val);
@@ -43,9 +68,9 @@ const AINegamax = (() => {
 
     // Quick score for initial ordering
     const scored = moves.map(m => {
-      applyMove(board, m, g.turn);
+      const p = applyMove(board, m, g.turn, g.phase);
       const s = AIEval.evaluate(board, g.turn, g.phase);
-      undoMove(board, m, g.turn);
+      undoMove(board, m, g.turn, p);
       return { m, s };
     });
     scored.sort((a, b) => b.s - a.s);
@@ -62,9 +87,9 @@ const AINegamax = (() => {
       const scores = [];
 
       for (const m of moves) {
-        applyMove(board, m, g.turn);
+        const p = applyMove(board, m, g.turn, g.phase);
         const val = -negamax(board, depth - 1, -Infinity, -bestVal, opp(g.turn), g.phase);
-        undoMove(board, m, g.turn);
+        undoMove(board, m, g.turn, p);
         if (aborted) break;
         scores.push({ m, s: val });
         if (val > bestVal) { bestVal = val; }

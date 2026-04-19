@@ -32,6 +32,7 @@ const AIMCTS = (() => {
   }
 
   function applyMoveToSim(sim, m, color) {
+    const prevF = Formation.findAll(sim.board, color);
     if (m.r !== undefined) {
       sim.board[m.r][m.c] = color;
       sim.placedCount++;
@@ -39,10 +40,18 @@ const AIMCTS = (() => {
       sim.board[m.fr][m.fc] = null;
       sim.board[m.tr][m.tc] = color;
     }
+    // Simulate pinch
+    const o = opp(color);
+    const newF = Formation.findNew(sim.board, color, prevF);
+    for (let i = 0; i < newF.length; i++) {
+      const targets = Formation.pinchTargets(sim.board, o);
+      if (targets.length === 0) break;
+      const [r, c] = targets[Math.floor(Math.random() * targets.length)];
+      sim.board[r][c] = sim.phase === Game.PHASE_PLACE ? 'D' + o : null;
+    }
     sim.turn = opp(color);
     if (sim.phase === Game.PHASE_PLACE && sim.placedCount >= 25) {
       sim.phase = Game.PHASE_MOVE;
-      // Remove dead pieces for simulation
       for (let r = 0; r < 5; r++)
         for (let c = 0; c < 5; c++)
           if (sim.board[r][c] && sim.board[r][c][0] === 'D') sim.board[r][c] = null;
