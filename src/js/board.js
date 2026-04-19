@@ -387,6 +387,8 @@ const Board = (() => {
     updateTimerBar();
     const tick = 50;
     claimTimer = setInterval(() => {
+      if (!claimTimer) return;
+      if (timerPaused) return;
       claimTimeLeft -= tick;
       updateTimerBar();
       if (claimTimeLeft <= 0) {
@@ -407,6 +409,7 @@ const Board = (() => {
     updateTimerBar();
     const tick = 50;
     claimTimer = setInterval(() => {
+      if (!claimTimer) return;
       claimTimeLeft -= tick;
       updateTimerBar();
       if (claimTimeLeft <= 0) {
@@ -461,6 +464,7 @@ const Board = (() => {
 
   function doAITurn() {
     if (game.phase === Game.PHASE_OVER) return;
+    if (!aiEngine || game.turn !== aiColor) return;
     if (game.state === Game.STATE_WAIT_SACRIFICE) {
       const t = aiEngine.chooseSacrifice(game);
       if (t) {
@@ -502,6 +506,7 @@ const Board = (() => {
     updateTimerBar();
     const tick = 50;
     claimTimer = setInterval(() => {
+      if (!claimTimer) return;
       claimTimeLeft -= tick;
       updateTimerBar();
       if (claimTimeLeft <= 0) {
