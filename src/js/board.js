@@ -411,6 +411,7 @@ const Board = (() => {
       updateTimerBar();
       if (claimTimeLeft <= 0) {
         clearTimer();
+        render(); updateStatus();
         continueGame();
       }
     }, tick);
@@ -427,7 +428,7 @@ const Board = (() => {
   let timerPaused = false;
 
   function pauseTimer() {
-    if (blindTimer) { clearTimer(); continueGame(); return; }
+    if (blindTimer) { clearTimer(); render(); updateStatus(); continueGame(); return; }
     if (!showHints) { clearTimer(); Game.expireClaim(game); render(); updateStatus(); continueGame(); return; }
     if (game.state !== Game.STATE_WAIT_PINCH_SELECT || timerPaused) return;
     if (claimTimer) { clearInterval(claimTimer); claimTimer = null; }
