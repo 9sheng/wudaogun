@@ -1,7 +1,7 @@
 // Level 5: Iterative Deepening Negamax with alpha-beta + move ordering
 const AINegamax = (() => {
   const opp = c => c === 'B' ? 'W' : 'B';
-  const TIME_BUDGET = 2000; // ms
+  const TIME_BUDGET = 3000; // ms
   let deadline = 0;
   let aborted = false;
 
@@ -66,18 +66,20 @@ const AINegamax = (() => {
     let moves = Game.getLegalMoves(g, g.turn);
     if (moves.length <= 1) return moves[0];
 
-    // Quick score for initial ordering
+    // Quick score for initial ordering (no pinch sim for speed)
     const scored = moves.map(m => {
-      const p = applyMove(board, m, g.turn, g.phase);
+      if (m.r !== undefined) board[m.r][m.c] = g.turn;
+      else { board[m.fr][m.fc] = null; board[m.tr][m.tc] = g.turn; }
       const s = AIEval.evaluate(board, g.turn, g.phase);
-      undoMove(board, m, g.turn, p);
+      if (m.r !== undefined) board[m.r][m.c] = null;
+      else { board[m.fr][m.fc] = g.turn; board[m.tr][m.tc] = null; }
       return { m, s };
     });
     scored.sort((a, b) => b.s - a.s);
     moves = scored.map(x => x.m);
 
     deadline = Date.now() + TIME_BUDGET;
-    const maxDepth = g.phase === Game.PHASE_PLACE ? 6 : 8;
+    const maxDepth = g.phase === Game.PHASE_PLACE ? 4 : 5;
 
     // Iterative deepening
     let lastScores = scored;
