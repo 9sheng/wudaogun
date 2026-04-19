@@ -12,11 +12,9 @@ const AI = (() => {
 
   function list() {
     return [
-      { id: 'random',  name: '初级',  desc: 'Beginner' },
-      { id: 'negamax', name: '中级', desc: 'Intermediate' },
-      { id: 'greedy',  name: '高级',   desc: 'Advanced' },
-      { id: 'mcts',    name: '专家',  desc: 'Expert' },
-      { id: 'minimax', name: '大师', desc: 'Master' },
+      { id: 'greedy',  name: '初级',   desc: 'Beginner' },
+      { id: 'mcts',    name: '中级',  desc: 'Intermediate' },
+      { id: 'minimax', name: '高级', desc: 'Advanced' },
     ];
   }
 

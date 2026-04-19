@@ -483,7 +483,7 @@ describe('AI: Factory', () => {
   });
 
   it('should list all AI levels', () => {
-    eq(AI.list().length, 5);
+    eq(AI.list().length, 3);
   });
 });
 
