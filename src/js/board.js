@@ -14,6 +14,7 @@ const Board = (() => {
   let lastPlaced = null;
   let pinchAnim = null; // {r, c, phase} for pinch animation
   let blindTimer = false; // true when showing blind-mode countdown (no formation)
+  let blindTurnColor = null; // the turn color to display during blind timer
 
   function init(canvasEl) {
     canvas = canvasEl;
@@ -362,6 +363,7 @@ const Board = (() => {
 
     if (!showHints) {
       // Blind mode: always show 10s timer, player can try to pinch
+      blindTurnColor = result.newFormations && result.newFormations.length > 0 ? game.turn : (game.turn === 'B' ? 'W' : 'B');
       if (result.newFormations && result.newFormations.length > 0) {
         startPinchTimer();
       } else {
@@ -547,8 +549,9 @@ const Board = (() => {
     if (!el) return;
 
     const phaseNames = { [Game.PHASE_PLACE]: '下子阶段', [Game.PHASE_MOVE]: '走子阶段', [Game.PHASE_OVER]: '游戏结束' };
-    const turnIcon = game.turn === 'B' ? '●' : '○';
-    const turnName = game.turn === 'B' ? '黑方' : '白方';
+    const displayTurn = (blindTimer || (!showHints && game.state === Game.STATE_WAIT_PINCH_SELECT)) ? blindTurnColor : game.turn;
+    const turnIcon = displayTurn === 'B' ? '●' : '○';
+    const turnName = displayTurn === 'B' ? '黑方' : '白方';
 
     let msg = '';
     if (blindTimer) {
@@ -594,7 +597,10 @@ const Board = (() => {
     if (moveEl) moveEl.textContent = game.phase === Game.PHASE_PLACE ? `${game.placedCount}/25` : '—';
 
     // Cursor
-    if (canvas) canvas.style.cursor = game.phase === Game.PHASE_OVER ? 'default' : makeCursor(game.turn);
+    if (canvas) {
+      const cursorColor = (blindTimer || (!showHints && game.state === Game.STATE_WAIT_PINCH_SELECT)) ? blindTurnColor : game.turn;
+      canvas.style.cursor = game.phase === Game.PHASE_OVER ? 'default' : makeCursor(cursorColor);
+    }
   }
 
   const cursorCache = {};
