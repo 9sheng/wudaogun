@@ -579,7 +579,6 @@ const Board = (() => {
     const btn = document.getElementById('btn-claim');
     if (btn) {
       const show = game.state === Game.STATE_WAIT_PINCH_SELECT || blindTimer;
-      btn.style.display = show ? 'flex' : 'none';
       btn.classList.toggle('active', show);
       const txt = btn.querySelector('.claim-text');
       if (txt) {
