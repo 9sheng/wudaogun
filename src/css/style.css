@@ -255,9 +255,14 @@ canvas {
 }
 .rules b { color: #7a8ba6; }
 
+.update-time {
+  font-size: 0.7em;
+  color: #4a5568;
+}
+
 /* Mobile responsive */
 @media (max-width: 520px) {
-  body { padding: 12px; }
+  body { padding: 12px; align-items: flex-start; }
   .container { gap: 10px; }
   .header h1 { font-size: 1.4em; }
   .score-panel { padding: 8px 16px; gap: 14px; }
