@@ -80,20 +80,42 @@ const AIEval = (() => {
     const o = opp(color);
     let score = 0;
 
-    // Piece count (more important in move phase)
+    // Piece count (critical in move phase)
     const myCount = Game.pieceCount({board}, color);
     const opCount = Game.pieceCount({board}, o);
-    score += (myCount - opCount) * (phase === Game.PHASE_MOVE ? 30 : 15);
+    if (phase === Game.PHASE_MOVE) {
+      if (opCount === 0) return 10000;
+      if (myCount === 0) return -10000;
+      score += (myCount - opCount) * 50;
+    } else {
+      score += (myCount - opCount) * 15;
+      // Penalize own dead pieces
+      let myDead = 0, opDead = 0;
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++) {
+          if (board[r][c] === 'D' + color) myDead++;
+          else if (board[r][c] === 'D' + o) opDead++;
+        }
+      score += (opDead - myDead) * 25;
+    }
 
     // Formations
     const myF = Formation.findAll(board, color);
     const opF = Formation.findAll(board, o);
     for (const f of myF) score += formationScore(f);
-    for (const f of opF) score -= formationScore(f) * 1.1; // slightly penalize opponent formations more
+    for (const f of opF) score -= formationScore(f) * 1.2;
 
     // Threats (near-formations)
-    score += countThreats(board, color) * 2;
-    score -= countThreats(board, o) * 2.2;
+    const myThreats = countThreats(board, color);
+    const opThreats = countThreats(board, o);
+    score += myThreats * 2.5;
+    score -= opThreats * 2.8;
+
+    // Double threats: multiple threats at once (opponent can only block one)
+    const myImminent = countImminentThreats(board, color);
+    const opImminent = countImminentThreats(board, o);
+    if (myImminent >= 2) score += myImminent * 20;
+    if (opImminent >= 2) score -= opImminent * 22;
 
     // Position control
     for (let r = 0; r < 5; r++)
@@ -109,11 +131,49 @@ const AIEval = (() => {
     // Mobility (move phase)
     if (phase === Game.PHASE_MOVE) {
       const g = { board, phase, turn: color };
-      score += Game.getLegalMoves(g, color).length * 3;
-      score -= Game.getLegalMoves(g, o).length * 3;
+      const myMoves = Game.getLegalMoves(g, color).length;
+      const opMoves = Game.getLegalMoves(g, o).length;
+      score += myMoves * 4;
+      score -= opMoves * 4;
+      // Trap detection: opponent has very few moves
+      if (opMoves <= 1) score += 30;
     }
 
     return score;
+  }
+
+  // Count imminent threats (1 piece away from completing a formation)
+  function countImminentThreats(board, color) {
+    let count = 0;
+    for (const line of Formation.DIAG_LINES) {
+      let mine = 0, empty = 0;
+      for (const [r, c] of line) {
+        if (board[r][c] === color) mine++;
+        else if (board[r][c] === null) empty++;
+      }
+      if (mine === line.length - 1 && empty === 1) count++;
+    }
+    // Row/column
+    for (let i = 0; i < 5; i++) {
+      let rm = 0, re = 0, cm = 0, ce = 0;
+      for (let j = 0; j < 5; j++) {
+        if (board[i][j] === color) rm++; else if (board[i][j] === null) re++;
+        if (board[j][i] === color) cm++; else if (board[j][i] === null) ce++;
+      }
+      if (rm === 4 && re === 1) count++;
+      if (cm === 4 && ce === 1) count++;
+    }
+    // Square
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++) {
+        let m = 0, e = 0;
+        for (const [dr, dc] of [[0,0],[0,1],[1,0],[1,1]]) {
+          if (board[r+dr][c+dc] === color) m++;
+          else if (board[r+dr][c+dc] === null) e++;
+        }
+        if (m === 3 && e === 1) count++;
+      }
+    return count;
   }
 
   // Simulate pinch after a move: detect new formations, greedily remove best opponent targets

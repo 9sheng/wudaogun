@@ -1,7 +1,7 @@
 // Level 4: Monte Carlo Tree Search (MCTS)
 const AIMCTS = (() => {
   const opp = c => c === 'B' ? 'W' : 'B';
-  const TIME_BUDGET = 1500; // ms
+  const TIME_BUDGET = 2000; // ms
   const C = 1.41; // UCB1 exploration constant
 
   class Node {
@@ -61,21 +61,36 @@ const AIMCTS = (() => {
   function simulate(g, rootColor) {
     const sim = Game.clone(g);
     let depth = 0;
-    while (depth < 50) {
+    while (depth < 40) {
       const moves = Game.getLegalMoves(sim, sim.turn);
       if (moves.length === 0) {
-        // Check if stuck = sacrifice simulation
         const own = [];
         for (let r = 0; r < 5; r++)
           for (let c = 0; c < 5; c++)
             if (sim.board[r][c] === sim.turn) own.push([r, c]);
         if (own.length === 0) return sim.turn === rootColor ? 0 : 1;
-        // Sacrifice random piece
         const [sr, sc] = own[Math.floor(Math.random() * own.length)];
         sim.board[sr][sc] = null;
         sim.turn = opp(sim.turn);
       } else {
-        const m = moves[Math.floor(Math.random() * moves.length)];
+        let m;
+        // Epsilon-greedy: 50% pick best by quick heuristic, 50% random
+        if (moves.length > 1 && Math.random() < 0.5) {
+          let best = moves[0], bs = -Infinity;
+          // Sample up to 5 moves, use quick positional score
+          const sample = moves.length <= 5 ? moves : 
+            Array.from({length: 5}, () => moves[Math.floor(Math.random() * moves.length)]);
+          const POS = [[3,2,3,2,3],[2,4,3,4,2],[3,3,5,3,3],[2,4,3,4,2],[3,2,3,2,3]];
+          for (const mv of sample) {
+            const tr = mv.r !== undefined ? mv.r : mv.tr;
+            const tc = mv.r !== undefined ? mv.c : mv.tc;
+            const s = POS[tr][tc];
+            if (s > bs) { bs = s; best = mv; }
+          }
+          m = best;
+        } else {
+          m = moves[Math.floor(Math.random() * moves.length)];
+        }
         applyMoveToSim(sim, m, sim.turn);
       }
       // Check terminal

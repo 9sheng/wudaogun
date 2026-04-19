@@ -1,8 +1,8 @@
 // Level 3: Minimax with Alpha-Beta Pruning + move ordering
 const AIMinimax = (() => {
   const opp = c => c === 'B' ? 'W' : 'B';
-  const MAX_DEPTH_PLACE = 3;
-  const MAX_DEPTH_MOVE = 4;
+  const MAX_DEPTH_PLACE = 4;
+  const MAX_DEPTH_MOVE = 6;
 
   function evaluate(g, color) {
     return AIEval.evaluate(g.board, color, g.phase);
@@ -92,7 +92,11 @@ const AIMinimax = (() => {
 
   function bestMove(g) {
     let moves = Game.getLegalMoves(g, g.turn);
-    const depth = g.phase === Game.PHASE_PLACE ? MAX_DEPTH_PLACE : MAX_DEPTH_MOVE;
+    let depth = MAX_DEPTH_PLACE;
+    if (g.phase === Game.PHASE_MOVE) {
+      const total = Game.pieceCount(g, 'B') + Game.pieceCount(g, 'W');
+      depth = total <= 6 ? 8 : total <= 10 ? MAX_DEPTH_MOVE : 5;
+    }
     const board = g.board.map(r => [...r]);
     moves = orderMoves(moves, board, g.turn, g.phase);
     let bestScore = -Infinity;
